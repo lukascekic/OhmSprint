@@ -1,0 +1,2 @@
+SensorData.sensor_id max_size: 32
+SensorResponse.message max_size: 64

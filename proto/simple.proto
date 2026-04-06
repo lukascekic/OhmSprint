@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message SensorData {
+    float temperature = 1;
+    float humidity = 2;
+    uint32 timestamp = 3;
+    string sensor_id = 4;
+}
+
+message SensorResponse {
+    bool success = 1;
+    string message = 2;
+    SensorData data = 3;
+}
