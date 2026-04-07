@@ -738,15 +738,17 @@ _Execution note: completed by Codex on 2026-04-07 10:23:01_
 **Files:**
 - Create: `lib/screens/shell_screen.dart`
 
-- [ ] **Step 1:** Build shell:
+- [x] **Step 1:** Build shell:
   - Scaffold body: `IndexedStack` with 4 children (Dashboard, Charts, Quality, Settings)
   - bottomNavigationBar: custom `BottomNavBar` from Task 10
   - Stack overlay: `ConnectionLostOverlay` shown when connection state != connected
   - Tab state preserved via IndexedStack
-- [ ] **Step 2:** Commit: "feat: add shell screen with tab navigation"
+- [x] **Step 2:** Commit: "feat: add shell screen with tab navigation"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:24:54_
 ### Task 14: Dashboard Screen (S3)
 
 **Files:**
