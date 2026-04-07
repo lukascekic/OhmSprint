@@ -603,15 +603,17 @@ _Execution note: completed by Codex on 2026-04-07 09:48:18_
 - Create: `lib/widgets/common/metric_label.dart`
 - Create: `lib/widgets/common/connection_lost_overlay.dart`
 
-- [ ] **Step 1:** Create `glass_card.dart`: Container with GlassDecoration, padding, child. Optional `elevated` flag for different surface tier.
-- [ ] **Step 2:** Create `status_dot.dart`: 8px circle, AnimatedContainer for color (green=connected, red=disconnected), pulsing animation with `AnimationController` + `FadeTransition`.
-- [ ] **Step 3:** Create `metric_value.dart`: Row of [value in monoLarge/monoMedium] + [unit in smaller colored text]. Takes `double value`, `String unit`, `Color color`, `TextStyle style`. Uses `TweenAnimationBuilder<double>` for smooth number transitions.
-- [ ] **Step 4:** Create `metric_label.dart`: Text with Space Grotesk, uppercase, tracking 2.0, on-surface-variant color.
-- [ ] **Step 5:** Create `connection_lost_overlay.dart`: Positioned.fill with dark semi-transparent background, centered Column with pulsing WiFi icon, "Connection Lost" text, "Reconnecting..." with animated dots, "Retry" button.
-- [ ] **Step 6:** Commit: "feat: add common reusable widgets"
+- [x] **Step 1:** Create `glass_card.dart`: Container with GlassDecoration, padding, child. Optional `elevated` flag for different surface tier.
+- [x] **Step 2:** Create `status_dot.dart`: 8px circle, AnimatedContainer for color (green=connected, red=disconnected), pulsing animation with `AnimationController` + `FadeTransition`.
+- [x] **Step 3:** Create `metric_value.dart`: Row of [value in monoLarge/monoMedium] + [unit in smaller colored text]. Takes `double value`, `String unit`, `Color color`, `TextStyle style`. Uses `TweenAnimationBuilder<double>` for smooth number transitions.
+- [x] **Step 4:** Create `metric_label.dart`: Text with Space Grotesk, uppercase, tracking 2.0, on-surface-variant color.
+- [x] **Step 5:** Create `connection_lost_overlay.dart`: Positioned.fill with dark semi-transparent background, centered Column with pulsing WiFi icon, "Connection Lost" text, "Reconnecting..." with animated dots, "Retry" button.
+- [x] **Step 6:** Commit: "feat: add common reusable widgets"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 09:56:18_
 ### Task 8: Gauge Widgets
 
 **Files:**
