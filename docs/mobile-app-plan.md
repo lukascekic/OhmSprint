@@ -241,8 +241,8 @@ _Execution note: completed by Codex on 2026-04-07 08:17:30_
 - Create: `lib/core/theme/app_theme.dart`
 - Create: `lib/core/theme/glass_decoration.dart`
 
-- [ ] **Step 1:** Create `app_colors.dart` — all color constants from design system table above, plus glow variants (`.withOpacity(0.4)` for each metric color), plus outline-variant (#404752)
-- [ ] **Step 2:** Create `app_typography.dart` — TextStyle definitions:
+- [x] **Step 1:** Create `app_colors.dart` — all color constants from design system table above, plus glow variants (`.withOpacity(0.4)` for each metric color), plus outline-variant (#404752)
+- [x] **Step 2:** Create `app_typography.dart` — TextStyle definitions:
   - `displayLarge`: Space Grotesk, 48, bold (hero numbers)
   - `headlineMedium`: Space Grotesk, 24, w500
   - `labelSmall`: Inter, 10, uppercase, letterSpacing 2.0
@@ -250,17 +250,19 @@ _Execution note: completed by Codex on 2026-04-07 08:17:30_
   - `monoLarge`: JetBrains Mono, 40, bold (main gauge value)
   - `monoMedium`: JetBrains Mono, 24, w500 (secondary values)
   - `monoSmall`: JetBrains Mono, 11 (chart labels, event timestamps)
-- [ ] **Step 3:** Create `app_theme.dart`:
+- [x] **Step 3:** Create `app_theme.dart`:
   - `AppTheme.dark` — `ThemeData.dark()` with scaffoldBackgroundColor #111125, cardColor #1e1e32, custom ColorScheme, textTheme from step 2
   - `AppTheme.light` — `ThemeData.light()` with inverted surface colors (white scaffold, light gray cards), same accent colors, adjusted text colors for readability on light bg
-- [ ] **Step 4:** Create `glass_decoration.dart` — factory methods:
+- [x] **Step 4:** Create `glass_decoration.dart` — factory methods:
   - `GlassDecoration.card()`: color #1a1a2e at 60% opacity, borderRadius 12, border 0.5px primary at 10%
   - `GlassDecoration.elevated()`: color #1e1e32 at 80%, borderRadius 16, glow inner shadow
   - `GlassDecoration.surface()`: color #28283d, borderRadius 8
-- [ ] **Step 5:** Commit: "feat: add design system theme, colors, typography"
+- [x] **Step 5:** Commit: "feat: add design system theme, colors, typography"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 08:20:54_
 ### Task 2: Data Models
 
 **Files:**
