@@ -428,7 +428,7 @@ _Execution note: completed by Codex on 2026-04-07 08:45:20_
 - Test: `test/utils/formatters_test.dart`
 - Test: `test/utils/quality_evaluator_test.dart`
 
-- [ ] **Step 1:** Write `formatters_test.dart`:
+- [x] **Step 1:** Write `formatters_test.dart`:
 ```dart
 test('voltage formats to 1 decimal', () {
   expect(formatMetric(MetricType.voltage, 230.156), '230.2');
@@ -440,7 +440,7 @@ test('power formats to 0 decimals for large values', () {
   expect(formatMetric(MetricType.power, 967.2), '967');
 });
 ```
-- [ ] **Step 2:** Write `quality_evaluator_test.dart`:
+- [x] **Step 2:** Write `quality_evaluator_test.dart`:
 ```dart
 test('voltage 230V is normal', () {
   expect(evaluateQuality(MetricType.voltage, 230.0), QualityLevel.normal);
@@ -452,9 +452,9 @@ test('voltage 205V is critical', () {
   expect(evaluateQuality(MetricType.voltage, 205.0), QualityLevel.critical);
 });
 ```
-- [ ] **Step 3:** Implement `formatters.dart` and `quality_evaluator.dart`
-- [ ] **Step 4:** Create `app_constants.dart`: default WS URL (`ws://192.168.4.1/ws`), reconnect delays (1s/2s/4s/max 30s), history buffer size (3600), Hive flush interval (30s)
-- [ ] **Step 5:** Create `lib/core/utils/downsampler.dart`:
+- [x] **Step 3:** Implement `formatters.dart` and `quality_evaluator.dart`
+- [x] **Step 4:** Create `app_constants.dart`: default WS URL (`ws://192.168.4.1/ws`), reconnect delays (1s/2s/4s/max 30s), history buffer size (3600), Hive flush interval (30s)
+- [x] **Step 5:** Create `lib/core/utils/downsampler.dart`:
 ```dart
 /// Downsample a list of measurements for chart display.
 /// For 1m/5m/15m: return all points.
@@ -466,11 +466,13 @@ List<Measurement> downsample(List<Measurement> data, int targetPoints) {
   return List.generate(targetPoints, (i) => data[(i * step).floor()]);
 }
 ```
-- [ ] **Step 6:** Run all tests: `flutter test`
-- [ ] **Step 7:** Commit: "feat: add formatters, quality evaluator, downsampler, constants"
+- [x] **Step 6:** Run all tests: `flutter test`
+- [x] **Step 7:** Commit: "feat: add formatters, quality evaluator, downsampler, constants"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 08:53:02_
 ### Task 4: Services
 
 **Files:**
