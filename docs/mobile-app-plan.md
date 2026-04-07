@@ -821,7 +821,7 @@ _Execution note: completed by Codex on 2026-04-07 10:57:08_
 **Files:**
 - Create: `lib/screens/settings_screen.dart`
 
-- [ ] **Step 1:** Build settings screen. Reference `UI-stitch/settings/code.html`:
+- [x] **Step 1:** Build settings screen. Reference `UI-stitch/settings/code.html`:
   - ScrollView with sections, each in a GlassCard:
   - **Device Connection:** IP text field (settingsProvider.deviceIp), auto-connect Switch, WiFi name read-only
   - **Tariff Configuration:** price/kWh TextField (numeric keyboard), currency DropdownButton (RSD/EUR)
@@ -832,10 +832,12 @@ _Execution note: completed by Codex on 2026-04-07 10:57:08_
   - **Data Management:** "Export Data" ElevatedButton -> `context.push('/settings/export')`, "Clear Local Data" TextButton with confirmation AlertDialog
   - **About:** "OhmSprint v0.1.0" in headlineMedium, "OhmSprint 2026" label
   - All persisted values read/written through settingsProvider; debug-only demo switch reads/writes `demoModeProvider`
-- [ ] **Step 2:** Commit: "feat: add settings screen"
+- [x] **Step 2:** Commit: "feat: add settings screen"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 11:17:26_
 ### Task 18: Export Screen (S8)
 
 **Files:**
