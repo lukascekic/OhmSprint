@@ -778,7 +778,7 @@ _Execution note: completed by Codex on 2026-04-07 10:27:52_
 **Files:**
 - Create: `lib/screens/charts_screen.dart`
 
-- [ ] **Step 1:** Build charts screen. Reference `UI-stitch/charts_screen/code.html`:
+- [x] **Step 1:** Build charts screen. Reference `UI-stitch/charts_screen/code.html`:
   - **Tab bar:** 5 tabs (Voltage, Current, Power, Frequency, Energy) in scrollable row, styled as chips
   - **Current value display:** large monoLarge number + unit for selected metric, delta arrow vs previous minute
   - **LiveLineChart** showing history data filtered by selected MetricType and timeRange
@@ -789,10 +789,12 @@ _Execution note: completed by Codex on 2026-04-07 10:27:52_
   - NOTE: Do NOT implement "Stability Index" or "Core Temp" (UI-NOTES.md)
   - NOTE: Power tab shows values in **W** not kW (UI-NOTES.md)
   - State: selected tab (MetricType), selected time range (int seconds)
-- [ ] **Step 2:** Commit: "feat: add charts screen with live graphs and time range selection"
+- [x] **Step 2:** Commit: "feat: add charts screen with live graphs and time range selection"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:43:34_
 ### Task 16: Power Quality Screen (S5)
 
 **Files:**
