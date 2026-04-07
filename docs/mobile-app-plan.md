@@ -700,17 +700,19 @@ _Execution note: completed by Codex on 2026-04-07 10:13:44_
 **Files:**
 - Create: `lib/screens/splash_screen.dart`
 
-- [ ] **Step 1:** Build splash screen matching mock:
+- [x] **Step 1:** Build splash screen matching mock:
   - Full screen, scaffold bg color (#111125)
   - Center: bolt icon in rounded square container with primary-container glow
   - "OhmSprint" in displayLarge, "ENERGY MONITOR" in labelSmall between horizontal dividers
   - Linear progress bar (primary-container color, 200px wide)
   - Version text at bottom in monoSmall
   - `Future.delayed(Duration(milliseconds: 1500))` then `context.go('/connect')`
-- [ ] **Step 2:** Commit: "feat: add splash screen"
+- [x] **Step 2:** Commit: "feat: add splash screen"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:20:23_
 ### Task 12: Connection Screen (S2)
 
 **Files:**
