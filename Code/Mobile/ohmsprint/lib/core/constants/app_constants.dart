@@ -23,5 +23,6 @@ class AppConstants {
 
   /// 1 hour of 1 Hz samples.
   static const int historyBufferSize = 3600;
+  static const int powerEventBufferSize = 200;
   static const Duration hiveFlushInterval = Duration(seconds: 30);
 }

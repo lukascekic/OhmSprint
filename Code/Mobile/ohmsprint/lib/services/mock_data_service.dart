@@ -32,7 +32,7 @@ class MockDataService {
     }
 
     _sampleInterval = interval;
-    _emitMeasurement();
+    Timer.run(_emitMeasurement);
     _timer = Timer.periodic(interval, (_) {
       _emitMeasurement();
       _ticksUntilEvent -= 1;
