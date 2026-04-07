@@ -754,7 +754,7 @@ _Execution note: completed by Codex on 2026-04-07 10:24:54_
 **Files:**
 - Create: `lib/screens/dashboard_screen.dart`
 
-- [ ] **Step 1:** Build dashboard — the most complex screen. Reference `UI-stitch/dashboard/code.html`:
+- [x] **Step 1:** Build dashboard — the most complex screen. Reference `UI-stitch/dashboard/code.html`:
   - **Header row:** "OhmSprint" logo text + GlassCard pill with StatusDot + device name "EnergyMeter-XXXX" + current time
   - **"LIVE TELEMETRY" section header** with timestamp
   - **HeroRadialGauge** for Active Power (value from latestMeasurement.activePower, max 5000, secondary green gradient)
@@ -767,10 +767,12 @@ _Execution note: completed by Codex on 2026-04-07 10:24:54_
   - **SparklineWidget** showing last 60 power readings from measurementHistory, tappable to navigate to `/charts`
   - Entire body is a SingleChildScrollView
   - ConsumerWidget watching latestMeasurementProvider
-- [ ] **Step 2:** Commit: "feat: add dashboard screen with live gauges and energy card"
+- [x] **Step 2:** Commit: "feat: add dashboard screen with live gauges and energy card"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:27:52_
 ### Task 15: Charts Screen (S4)
 
 **Files:**
