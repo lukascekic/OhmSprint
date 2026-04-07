@@ -583,15 +583,17 @@ _Execution note: completed by Codex on 2026-04-07 09:25:39_
 **Files:**
 - Create: `lib/core/router/app_router.dart`
 
-- [ ] **Step 1:** Configure GoRouter:
+- [x] **Step 1:** Configure GoRouter:
   - `/` -> SplashScreen (redirect to `/connect` after 1.5s)
   - `/connect` -> ConnectionScreen (redirect to `/dashboard` when connected)
   - ShellRoute with bottom nav for: `/dashboard`, `/charts`, `/quality`, `/settings`
   - `/settings/export` -> ExportScreen (push on top of shell)
-- [ ] **Step 2:** Commit: "feat: add go_router navigation configuration"
+- [x] **Step 2:** Commit: "feat: add go_router navigation configuration"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 09:48:18_
 ### Task 7: Common Widgets
 
 **Files:**

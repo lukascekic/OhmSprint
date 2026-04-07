@@ -20,6 +20,7 @@ class AppConstants {
   static const Duration reconnectDelaySecondary = Duration(seconds: 2);
   static const Duration reconnectDelayTertiary = Duration(seconds: 4);
   static const Duration reconnectDelayMax = Duration(seconds: 30);
+  static const Duration splashRedirectDelay = Duration(milliseconds: 1500);
 
   /// 1 hour of 1 Hz samples.
   static const int historyBufferSize = 3600;
