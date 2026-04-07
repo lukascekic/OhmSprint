@@ -39,17 +39,19 @@ class MetricValue extends StatelessWidget {
                   displayValue,
                   style: style,
                 ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    unit,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
+                if (unit.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      unit,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

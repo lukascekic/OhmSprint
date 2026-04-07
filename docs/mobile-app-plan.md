@@ -622,26 +622,28 @@ _Execution note: completed by Codex on 2026-04-07 09:56:18_
 - Create: `lib/widgets/gauges/semi_circular_gauge.dart`
 - Create: `lib/widgets/gauges/quality_slider.dart`
 
-- [ ] **Step 1:** Create `hero_radial_gauge.dart`:
+- [x] **Step 1:** Create `hero_radial_gauge.dart`:
   - CustomPainter draws: background arc track (#333348, 6px stroke, 270-degree sweep), gradient fill arc (sweep proportional to value/max, SweepGradient from gradientStart to gradientEnd, round stroke cap), optional tick marks
   - Center child: Column with [MetricLabel, MetricValue (large), range badge]
   - `AnimationController` + `Tween<double>` for smooth arc transitions (300ms, Curves.easeOut)
   - Reference: `UI-stitch/dashboard/code.html` SVG gauge (stroke-dasharray: 251.2, dashoffset calculation)
-- [ ] **Step 2:** Create `mini_metric_card.dart`:
+- [x] **Step 2:** Create `mini_metric_card.dart`:
   - GlowBorderCard containing: metric icon, MetricLabel, MetricValue (medium size), horizontal LinearProgressIndicator with colored fill + glow shadow
   - Color-coded per metric type
   - Matches the 2x2 grid cards in dashboard mock
-- [ ] **Step 3:** Create `semi_circular_gauge.dart`:
+- [x] **Step 3:** Create `semi_circular_gauge.dart`:
   - CustomPainter, 180-degree arc, gradient fill, labels at 0 and max
   - Used for Power Factor on S5
   - Same animation approach as hero gauge
-- [ ] **Step 4:** Create `quality_slider.dart`:
+- [x] **Step 4:** Create `quality_slider.dart`:
   - Stack-based layout: 3-zone background (red zone | green zone | red zone for voltage), positioned marker circle at current value, labels below (min / nominal / max)
   - Takes: `double value`, `double min`, `double nominal`, `double max`, `Color normalColor`
-- [ ] **Step 5:** Commit: "feat: add gauge and quality indicator widgets"
+- [x] **Step 5:** Commit: "feat: add gauge and quality indicator widgets"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:02:31_
 ### Task 9: Chart Widgets
 
 **Files:**
