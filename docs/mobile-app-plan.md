@@ -547,8 +547,8 @@ _Execution note: completed by Codex on 2026-04-07 09:09:37_
 - Create: `lib/providers/settings_provider.dart`
 - Create: `lib/providers/stats_provider.dart`
 
-- [ ] **Step 1:** Create `demo_mode_provider.dart`: `final demoModeProvider = StateProvider<bool>((ref) => kDebugMode);` (true in debug, false in release)
-- [ ] **Step 2:** Create `connection_provider.dart`:
+- [x] **Step 1:** Create `demo_mode_provider.dart`: `final demoModeProvider = StateProvider<bool>((ref) => kDebugMode);` (true in debug, false in release)
+- [x] **Step 2:** Create `connection_provider.dart`:
   - `ConnectionNotifier extends StateNotifier<DeviceConnectionState>`
   - `connect(String ip)`: checks demoMode — if true, subscribe to MockDataService; else WebSocketService. After 3 consecutive WS failures, auto-fallback to HttpPollingService (Task 21 adds this).
   - Both services return `Stream<Map<String, dynamic>>`. ConnectionProvider owns the split:
@@ -557,25 +557,27 @@ _Execution note: completed by Codex on 2026-04-07 09:09:37_
   - **Wrap all JSON parsing in try/catch** — drop malformed messages, don't crash
   - Auto-reconnect with exponential backoff (1s, 2s, 4s, max 30s)
   - `disconnect()`: cancel subscriptions, close WS
-- [ ] **Step 3:** Create `measurement_provider.dart`:
+- [x] **Step 3:** Create `measurement_provider.dart`:
   - `measurementStreamProvider`: StreamProvider watching connection's measurement stream
   - `latestMeasurementProvider`: derived, holds most recent
   - `measurementHistoryProvider`: StateNotifier maintaining ring buffer of last 3600 readings in memory
   - **Batched Hive writes:** Every 30s, flush unsaved measurements to `MeasurementRepository.saveBatch()`. Also flush on app lifecycle pause (`WidgetsBindingObserver`).
   - For chart queries beyond 1h: read from Hive via repository, not the in-memory buffer
-- [ ] **Step 4:** Create `power_events_provider.dart`:
+- [x] **Step 4:** Create `power_events_provider.dart`:
   - StateNotifier accumulating events from connection stream, max 200 in memory, also saves to Hive
   - Add `clearEvents()` method for S5 "Clear" button
   - `clearEvents()` clears in-memory list and calls repository method to clear persisted event log
-- [ ] **Step 5:** Create `settings_provider.dart`:
+- [x] **Step 5:** Create `settings_provider.dart`:
   - StateNotifier persisting `SettingsModel` to Hive via repository
   - Explicitly covers: `deviceIp`, `autoConnect`, `tariffPrice`, `currency`, `voltageThreshold`, `freqThreshold`, `pfThreshold`, `notificationsEnabled`, `darkMode`, `updateInterval`
   - Does **not** own demo mode; demo mode stays in `demo_mode_provider.dart` and is only surfaced in debug builds
-- [ ] **Step 6:** Create `stats_provider.dart`: family provider `(MetricType, int secondsBack)` computing min/max/avg. For <=1h: from in-memory history. For >1h: query Hive repository.
-- [ ] **Step 7:** Commit: "feat: add Riverpod providers for connection, measurements, settings"
+- [x] **Step 6:** Create `stats_provider.dart`: family provider `(MetricType, int secondsBack)` computing min/max/avg. For <=1h: from in-memory history. For >1h: query Hive repository.
+- [x] **Step 7:** Commit: "feat: add Riverpod providers for connection, measurements, settings"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 09:25:39_
 ### Task 6: Router
 
 **Files:**
