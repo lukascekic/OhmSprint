@@ -274,7 +274,7 @@ _Execution note: completed by Codex on 2026-04-07 08:20:54_
 - Test: `test/models/measurement_test.dart`
 - Test: `test/models/power_event_test.dart`
 
-- [ ] **Step 1:** Write `measurement_test.dart`:
+- [x] **Step 1:** Write `measurement_test.dart`:
 ```dart
 void main() {
   group('Measurement.fromJson', () {
@@ -318,8 +318,8 @@ void main() {
   });
 }
 ```
-- [ ] **Step 2:** Run test to verify it fails: `flutter test test/models/measurement_test.dart`
-- [ ] **Step 3:** Create `measurement.dart`:
+- [x] **Step 2:** Run test to verify it fails: `flutter test test/models/measurement_test.dart`
+- [x] **Step 3:** Create `measurement.dart`:
 ```dart
 class Measurement {
   final double voltage;      // v
@@ -374,8 +374,8 @@ class Measurement {
   }
 }
 ```
-- [ ] **Step 4:** Run test to verify it passes
-- [ ] **Step 5:** Write `power_event_test.dart`:
+- [x] **Step 4:** Run test to verify it passes
+- [x] **Step 5:** Write `power_event_test.dart`:
 ```dart
 test('parses sag event', () {
   final json = {'ev': 'sag', 'v': 218.3, 'ts': 12345};
@@ -384,7 +384,7 @@ test('parses sag event', () {
   expect(e.description, contains('218.3'));
 });
 ```
-- [ ] **Step 6:** Create `power_event.dart`:
+- [x] **Step 6:** Create `power_event.dart`:
 ```dart
 enum EventType { sag, swell, freq, lpf }
 enum EventSeverity { warning, critical }
@@ -400,8 +400,8 @@ class PowerQualityEvent {
   // description is auto-generated: "Voltage sag detected (218.3V)"
 }
 ```
-- [ ] **Step 7:** Run test to verify it passes
-- [ ] **Step 8:** Create `connection_state.dart` (enum), `metric_type.dart` (enum with metadata), `settings_model.dart` with persisted app settings:
+- [x] **Step 7:** Run test to verify it passes
+- [x] **Step 8:** Create `connection_state.dart` (enum), `metric_type.dart` (enum with metadata), `settings_model.dart` with persisted app settings:
   - `deviceIp = '192.168.4.1'`
   - `autoConnect = true`
   - `tariffPrice = 0`
@@ -413,10 +413,12 @@ class PowerQualityEvent {
   - `darkMode = true`
   - `updateInterval = 1000`
   - Note: demo mode remains a separate **debug-only runtime toggle** in `demo_mode_provider.dart`, not part of persisted release settings
-- [ ] **Step 9:** Commit: "feat: add data models with JSON parsing and tests"
+- [x] **Step 9:** Commit: "feat: add data models with JSON parsing and tests"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 08:45:20_
 ### Task 3: Utilities
 
 **Files:**
