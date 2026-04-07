@@ -652,28 +652,30 @@ _Execution note: completed by Codex on 2026-04-07 10:02:31_
 - Create: `lib/widgets/charts/time_range_selector.dart`
 - Create: `lib/widgets/charts/stats_row.dart`
 
-- [ ] **Step 1:** Create `live_line_chart.dart`:
+- [x] **Step 1:** Create `live_line_chart.dart`:
   - Wraps fl_chart `LineChart` with dark theme styling
   - Props: `List<FlSpot> data`, `Color lineColor`, `double minY`, `double maxY`
   - Config: transparent background, grid lines at surface-variant 10%, line gradient with fill below at 20% opacity, auto-scrolling X axis, `LineTouchData` for long-press tooltip
   - Empty state: centered "Waiting for data..." text
-- [ ] **Step 2:** Create `sparkline_widget.dart`:
+- [x] **Step 2:** Create `sparkline_widget.dart`:
   - Simplified `LineChart`: no axes, no grid, no labels, just the line + gradient fill
   - Takes `List<double> values` (last 60), `Color color`
   - GestureDetector wrapping for tap-to-navigate
-- [ ] **Step 3:** Create `time_range_selector.dart`:
+- [x] **Step 3:** Create `time_range_selector.dart`:
   - Row of `ChoiceChip`-like buttons: "1m", "5m", "15m", "1h", "24h"
   - Active chip: surface-container-high bg, primary text
   - Inactive: transparent, on-surface-variant text
   - Calls `onChanged(int seconds)` callback
-- [ ] **Step 4:** Create `stats_row.dart`:
+- [x] **Step 4:** Create `stats_row.dart`:
   - Row of 3 columns: Min / Avg / Max
   - Each: MetricLabel on top, MetricValue (monoSmall) below
   - Separated by thin vertical dividers (outline-variant at 15%)
-- [ ] **Step 5:** Commit: "feat: add chart and sparkline widgets"
+- [x] **Step 5:** Commit: "feat: add chart and sparkline widgets"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:10:33_
 ### Task 10: Bottom Navigation Bar
 
 **Files:**
