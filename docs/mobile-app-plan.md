@@ -844,12 +844,12 @@ _Execution note: completed by Codex on 2026-04-07 11:17:26_
 - Create: `lib/screens/export_screen.dart`
 - Create: `lib/services/export_service.dart`
 
-- [ ] **Step 1:** Create `export_service.dart`:
+- [x] **Step 1:** Create `export_service.dart`:
   - `Future<String> generateCsv(List<Measurement> data, List<MetricType> metrics)` — uses csv package, writes to temp dir, returns file path
   - `Future<String> generatePdf(List<Measurement> data, List<MetricType> metrics, DateTimeRange range)` — uses pdf package, creates header with "OHMSPRINT" title, data table, min/max/avg stats, returns file path. **Note:** SCREENS.md spec mentions inline charts in PDF — stretch goal for v1. Table + stats are core, chart rendering via `pdf` package LineChart widget if time permits.
   - **PDF export limit:** Cap at 10,000 rows. For larger datasets, auto-downsample before generating PDF. CSV has no limit.
   - `Future<void> shareFile(String path)` — uses share_plus
-- [ ] **Step 2:** Build export screen. Reference `UI-stitch/export_report/code.html`:
+- [x] **Step 2:** Build export screen. Reference `UI-stitch/export_report/code.html`:
   - **"Data Synthesis" header**
   - **Temporal Range:** two date picker buttons (from/to), quick select chips ("Last 24h", "Last 7 Days")
   - **Telemetry Nodes:** CheckboxListTile for each MetricType value (V, I, P, Q, S, f, PF, E) — all map to `Measurement.valueFor()`
@@ -857,10 +857,12 @@ _Execution note: completed by Codex on 2026-04-07 11:17:26_
   - **Preview section:** GlassCard showing sample data summary (row count, date range, selected metrics)
   - **"Generate Report" primary button** — calls exportService, shows progress indicator
   - **Share button** — appears after generation, calls shareFile
-- [ ] **Step 3:** Commit: "feat: add export screen with CSV/PDF generation"
+- [x] **Step 3:** Commit: "feat: add export screen with CSV/PDF generation"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 11:28:58_
 ### Task 19: App Entry Point and Wiring
 
 **Files:**

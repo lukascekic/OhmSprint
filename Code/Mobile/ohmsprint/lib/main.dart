@@ -1,26 +1,66 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import 'app.dart';
+import 'providers/measurement_provider.dart';
+import 'services/measurement_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(const MyApp());
+  await Hive.initFlutter();
+
+  final repository = MeasurementRepository();
+  try {
+    await repository.init();
+  } catch (_) {
+    await Hive.deleteBoxFromDisk(MeasurementRepository.measurementsBoxName);
+    await Hive.deleteBoxFromDisk(MeasurementRepository.eventsBoxName);
+    await Hive.deleteBoxFromDisk(MeasurementRepository.settingsBoxName);
+    try {
+      await repository.init();
+    } catch (error) {
+      runApp(_StartupErrorApp(error: '$error'));
+      return;
+    }
+  }
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        measurementRepositoryProvider.overrideWithValue(repository),
+      ],
+      child: const OhmSprintApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class _StartupErrorApp extends StatelessWidget {
+  const _StartupErrorApp({required this.error});
+
+  final String error;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OhmSprint',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF9ECAFF)),
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(child: Text('OhmSprint scaffold ready')),
-      ),
+    return WidgetsApp(
+      color: const Color(0xFF111125),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'OhmSprint failed to initialize local storage.\n$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFFE2E0FC)),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
