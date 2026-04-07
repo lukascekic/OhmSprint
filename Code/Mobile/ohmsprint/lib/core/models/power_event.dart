@@ -17,6 +17,14 @@ class PowerQualityEvent {
   final EventSeverity severity;
   final String description;
 
+  Map<String, dynamic> toJson() {
+    return {
+      'ev': type.name,
+      ...values,
+      'ts': timestamp,
+    };
+  }
+
   factory PowerQualityEvent.fromJson(Map<String, dynamic> json) {
     final type = EventType.values.firstWhere(
       (value) => value.name == json['ev'],
