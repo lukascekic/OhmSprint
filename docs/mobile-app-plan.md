@@ -481,7 +481,7 @@ _Execution note: completed by Codex on 2026-04-07 08:53:02_
 - Create: `lib/services/measurement_repository.dart`
 - Test: `test/services/mock_data_service_test.dart`
 
-- [ ] **Step 1:** Create `websocket_service.dart`:
+- [x] **Step 1:** Create `websocket_service.dart`:
 ```dart
 class WebSocketService {
   WebSocketChannel? _channel;
@@ -495,10 +495,10 @@ class WebSocketService {
   bool get isConnected => _channel != null && _channel!.closeCode == null;
 }
 ```
-- [ ] **Step 2:** Write `mock_data_service_test.dart` — verify stream emits Measurement-compatible JSON, values in valid ranges (V: 200-260, I: 0-20, f: 49-51)
-- [ ] **Step 3:** Create `mock_data_service.dart` — `Timer.periodic(1s)` emitting realistic Brownian-walk measurements via `StreamController`. Voltage walks around 230V (sigma 2V), current around 4A, frequency around 50Hz (sigma 0.02), PF around 0.97. Random events every 30-60s.
-- [ ] **Step 4:** Run test to verify
-- [ ] **Step 5:** Create `measurement_repository.dart` using JSON serialization (no TypeAdapters/codegen):
+- [x] **Step 2:** Write `mock_data_service_test.dart` — verify stream emits Measurement-compatible JSON, values in valid ranges (V: 200-260, I: 0-20, f: 49-51)
+- [x] **Step 3:** Create `mock_data_service.dart` — `Timer.periodic(1s)` emitting realistic Brownian-walk measurements via `StreamController`. Voltage walks around 230V (sigma 2V), current around 4A, frequency around 50Hz (sigma 0.02), PF around 0.97. Random events every 30-60s.
+- [x] **Step 4:** Run test to verify
+- [x] **Step 5:** Create `measurement_repository.dart` using JSON serialization (no TypeAdapters/codegen):
 ```dart
 class MeasurementRepository {
   late Box<String> _measurementsBox;  // key=timestamp, value=jsonEncode(measurement)
@@ -531,10 +531,12 @@ class MeasurementRepository {
 }
 ```
 Note: Add `toJson()` method to Measurement model (inverse of fromJson).
-- [ ] **Step 6:** Commit: "feat: add WebSocket, mock data, and Hive repository services"
+- [x] **Step 6:** Commit: "feat: add WebSocket, mock data, and Hive repository services"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 09:09:37_
 ### Task 5: Providers (State Management)
 
 **Files:**
