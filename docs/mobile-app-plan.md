@@ -718,7 +718,7 @@ _Execution note: completed by Codex on 2026-04-07 10:20:23_
 **Files:**
 - Create: `lib/screens/connection_screen.dart`
 
-- [ ] **Step 1:** Build connection screen:
+- [x] **Step 1:** Build connection screen:
   - Pulsing concentric circles animation (3 rings expanding with decreasing opacity)
   - Center: wifi_tethering icon in circular container with glow
   - "Connecting to EnergyMeter..." text
@@ -727,10 +727,12 @@ _Execution note: completed by Codex on 2026-04-07 10:20:23_
   - "Connect Manually" outlined button -> shows dialog with IP text field (pre-filled 192.168.4.1)
   - ConsumerWidget: watches `connectionProvider`, when connected → `context.go('/dashboard')`
   - In demo mode: fake 2s "scanning" animation then auto-connect
-- [ ] **Step 2:** Commit: "feat: add connection screen with manual IP entry"
+- [x] **Step 2:** Commit: "feat: add connection screen with manual IP entry"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:23:01_
 ### Task 13: Shell Screen (Navigation Scaffold)
 
 **Files:**
