@@ -869,7 +869,7 @@ _Execution note: completed by Codex on 2026-04-07 11:28:58_
 - Create: `lib/main.dart`
 - Create: `lib/app.dart`
 
-- [ ] **Step 1:** Create `main.dart`:
+- [x] **Step 1:** Create `main.dart`:
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -883,7 +883,7 @@ void main() async {
   ));
 }
 ```
-- [ ] **Step 2:** Create `app.dart`:
+- [x] **Step 2:** Create `app.dart`:
 ```dart
 class OhmSprintApp extends ConsumerWidget {
   const OhmSprintApp({super.key});
@@ -903,11 +903,13 @@ class OhmSprintApp extends ConsumerWidget {
   }
 }
 ```
-- [ ] **Step 3:** Run `flutter run` — verify splash -> connection -> dashboard flow works with demo data
-- [ ] **Step 4:** Commit: "feat: wire up app entry point with Hive init and router"
+- [x] **Step 3:** Run `flutter run` — verify splash -> connection -> dashboard flow works with demo data
+- [x] **Step 4:** Commit: "feat: wire up app entry point with Hive init and router"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 11:31:52_
 ### Task 20: mDNS Device Discovery
 
 **Files:**
@@ -918,7 +920,7 @@ class OhmSprintApp extends ConsumerWidget {
 
 ESP32-C3 can advertise itself via mDNS (e.g., `_ohmsprint._tcp`). The app should auto-discover the device before falling back to manual IP entry.
 
-- [ ] **Step 1:** Create `mdns_discovery_service.dart`:
+- [x] **Step 1:** Create `mdns_discovery_service.dart`:
 ```dart
 class MdnsDiscoveryService {
   /// Scans for OhmSprint devices on the local network.
@@ -956,17 +958,19 @@ class DiscoveredDevice {
   const DiscoveredDevice({required this.name, required this.ip, required this.port});
 }
 ```
-- [ ] **Step 2:** Write test that verifies scan returns empty list on timeout (mock network)
-- [ ] **Step 3:** Update `connection_screen.dart`:
+- [x] **Step 2:** Write test that verifies scan returns empty list on timeout (mock network)
+- [x] **Step 3:** Update `connection_screen.dart`:
   - On screen load, start mDNS scan with 5s timeout
   - If device found: show device name + IP in scan info panel, auto-fill IP
   - If not found: show "No devices found" after timeout, keep "Connect Manually" option
   - "Scanning Devices" button now triggers real mDNS scan (not just animation)
-- [ ] **Step 4:** Update `connection_provider.dart`: `connect()` can now accept IP from mDNS discovery result
-- [ ] **Step 5:** Commit: "feat: add mDNS auto-discovery for ESP32 device"
+- [x] **Step 4:** Update `connection_provider.dart`: `connect()` can now accept IP from mDNS discovery result
+- [x] **Step 5:** Commit: "feat: add mDNS auto-discovery for ESP32 device"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 12:14:29_
 ### Task 21: HTTP Polling Fallback
 
 **Files:**
@@ -976,7 +980,7 @@ class DiscoveredDevice {
 
 When WebSocket connection fails repeatedly, fall back to HTTP polling at `http://<device-ip>/api/readings`. Same JSON format, just polled instead of pushed.
 
-- [ ] **Step 1:** Create `http_polling_service.dart`:
+- [x] **Step 1:** Create `http_polling_service.dart`:
 ```dart
 class HttpPollingService {
   final String baseUrl;
@@ -1013,18 +1017,20 @@ class HttpPollingService {
   }
 }
 ```
-- [ ] **Step 2:** Write test: mock HTTP responses, verify stream emits parsed JSON
-- [ ] **Step 3:** Update `connection_provider.dart`:
+- [x] **Step 2:** Write test: mock HTTP responses, verify stream emits parsed JSON
+- [x] **Step 3:** Update `connection_provider.dart`:
   - Primary: try WebSocket connection
   - If WebSocket fails 3 times consecutively: switch to HTTP polling automatically
   - Update connection state to include transport type (ws/http) for UI display
   - If WebSocket reconnects successfully later: switch back to WS
   - Log transport switches for debugging
-- [ ] **Step 4:** Update `connection_screen.dart` and `status_dot.dart`: show transport indicator (WS icon vs HTTP icon) so user knows which mode is active
-- [ ] **Step 5:** Commit: "feat: add HTTP polling fallback when WebSocket fails"
+- [x] **Step 4:** Update `connection_screen.dart` and `status_dot.dart`: show transport indicator (WS icon vs HTTP icon) so user knows which mode is active
+- [x] **Step 5:** Commit: "feat: add HTTP polling fallback when WebSocket fails"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 12:14:29_
 ### Task 22: Integration Tests
 
 **Files:**

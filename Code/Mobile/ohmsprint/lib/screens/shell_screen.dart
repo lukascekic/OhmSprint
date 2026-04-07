@@ -64,9 +64,10 @@ class ShellScreen extends ConsumerWidget {
           if (showConnectionOverlay)
             ConnectionLostOverlay(
               onRetry: () {
-                ref
-                    .read(connectionProvider.notifier)
-                    .connect(connectionState.ipAddress ?? '192.168.4.1');
+                ref.read(connectionProvider.notifier).connect(
+                      connectionState.ipAddress ?? '192.168.4.1',
+                      port: connectionState.port,
+                    );
               },
             ),
         ],

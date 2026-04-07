@@ -9,7 +9,13 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../providers/connection_provider.dart';
 import '../providers/demo_mode_provider.dart';
+import '../providers/settings_provider.dart';
+import '../services/mdns_discovery_service.dart';
 import '../widgets/common/glass_card.dart';
+
+final mdnsDiscoveryServiceProvider = Provider<MdnsDiscoveryService>((ref) {
+  return MdnsDiscoveryService();
+});
 
 class ConnectionScreen extends ConsumerStatefulWidget {
   const ConnectionScreen({super.key});
@@ -25,6 +31,12 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
   late final AnimationController _pulseController;
   Timer? _demoScanTimer;
   bool _didScheduleDemoConnect = false;
+  bool _didStartRealScan = false;
+  bool _didAutoConnectDiscoveredDevice = false;
+  bool _isScanning = false;
+  bool _didFinishScan = false;
+  DiscoveredDevice? _discoveredDevice;
+  String? _scanStatusMessage;
 
   @override
   void initState() {
@@ -33,6 +45,13 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _startInitialDiscovery();
+    });
   }
 
   @override
@@ -40,6 +59,20 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
     _demoScanTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  void _startInitialDiscovery() {
+    if (ref.read(demoModeProvider)) {
+      _scheduleDemoConnectIfNeeded();
+      return;
+    }
+
+    if (_didStartRealScan) {
+      return;
+    }
+
+    _didStartRealScan = true;
+    unawaited(_runMdnsScan(autoConnectIfPossible: true));
   }
 
   void _scheduleDemoConnectIfNeeded() {
@@ -77,7 +110,13 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
   }
 
   Future<void> _showManualConnectDialog() async {
-    final controller = TextEditingController(text: _defaultIp);
+    final settings = ref.read(settingsProvider);
+    final suggestedIp = _discoveredDevice?.ip.isNotEmpty == true
+        ? _discoveredDevice!.ip
+        : settings.deviceIp;
+    final controller = TextEditingController(
+      text: suggestedIp.isNotEmpty ? suggestedIp : _defaultIp,
+    );
 
     final ip = await showDialog<String>(
       context: context,
@@ -139,7 +178,149 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
       return;
     }
 
-    ref.read(connectionProvider.notifier).connect(ip);
+    final discoveredPort =
+        _discoveredDevice != null && ip == _discoveredDevice!.ip
+            ? _discoveredDevice!.port
+            : null;
+    ref.read(connectionProvider.notifier).connect(ip, port: discoveredPort);
+  }
+
+  Future<void> _runMdnsScan({bool autoConnectIfPossible = false}) async {
+    if (_isScanning || ref.read(demoModeProvider)) {
+      return;
+    }
+
+    setState(() {
+      _isScanning = true;
+      _didFinishScan = false;
+      _scanStatusMessage = 'Scanning local network for OhmSprint services...';
+    });
+
+    try {
+      final devices = await ref.read(mdnsDiscoveryServiceProvider).scan(
+            timeout: const Duration(seconds: 5),
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (devices.isEmpty) {
+        setState(() {
+          _isScanning = false;
+          _didFinishScan = true;
+          _discoveredDevice = null;
+          _scanStatusMessage =
+              'No devices found. You can rescan or connect manually.';
+        });
+        return;
+      }
+
+      final device = devices.first;
+      setState(() {
+        _isScanning = false;
+        _didFinishScan = true;
+        _discoveredDevice = device;
+        _scanStatusMessage =
+            '${device.name} discovered at ${device.ip}:${device.port}.';
+      });
+
+      if (autoConnectIfPossible &&
+          ref.read(settingsProvider).autoConnect &&
+          !_didAutoConnectDiscoveredDevice) {
+        _didAutoConnectDiscoveredDevice = true;
+        ref
+            .read(connectionProvider.notifier)
+            .connect(device.ip, port: device.port);
+      }
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isScanning = false;
+        _didFinishScan = true;
+        _scanStatusMessage =
+            'mDNS scan failed. You can rescan or connect manually.';
+      });
+    }
+  }
+
+  Future<void> _handlePrimaryAction() async {
+    final isDemoMode = ref.read(demoModeProvider);
+    if (isDemoMode) {
+      ref.read(connectionProvider.notifier).connect(_defaultIp);
+      return;
+    }
+
+    final device = _discoveredDevice;
+    if (device != null) {
+      ref.read(connectionProvider.notifier).connect(
+            device.ip,
+            port: device.port,
+          );
+      return;
+    }
+
+    await _runMdnsScan();
+  }
+
+  String _transportLabel(ConnectionTransport? transport,
+      {bool isDemoMode = false}) {
+    if (isDemoMode) {
+      return 'MOCK STREAM';
+    }
+
+    return switch (transport) {
+      ConnectionTransport.http => 'HTTP POLLING',
+      ConnectionTransport.websocket => 'WEBSOCKET',
+      ConnectionTransport.mock => 'MOCK STREAM',
+      null => 'mDNS -> WS',
+    };
+  }
+
+  IconData _transportIcon(ConnectionTransport? transport,
+      {bool isDemoMode = false}) {
+    if (isDemoMode) {
+      return Icons.auto_graph_rounded;
+    }
+
+    return switch (transport) {
+      ConnectionTransport.http => Icons.sync_alt_rounded,
+      ConnectionTransport.websocket => Icons.wifi_tethering_rounded,
+      ConnectionTransport.mock => Icons.auto_graph_rounded,
+      null => Icons.travel_explore_rounded,
+    };
+  }
+
+  String _headlineLabel(bool isDemoMode) {
+    if (isDemoMode) {
+      return 'DEMO LINK ACTIVE';
+    }
+    if (_isScanning) {
+      return 'SCANNING LOCAL NETWORK';
+    }
+    if (_discoveredDevice != null) {
+      return 'DEVICE DISCOVERED';
+    }
+    return 'INITIALIZING LINK';
+  }
+
+  String _primaryButtonLabel(bool isDemoMode) {
+    if (isDemoMode) {
+      return 'ENTER DEMO STREAM';
+    }
+    if (_isScanning) {
+      return 'SCANNING...';
+    }
+    if (_discoveredDevice != null) {
+      return 'CONNECT DEVICE';
+    }
+    if (_didFinishScan) {
+      return 'RESCAN NETWORK';
+    }
+    return 'SCAN NETWORK';
   }
 
   @override
@@ -148,6 +329,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
     final isDemoMode = ref.watch(demoModeProvider);
     final isBusy = connectionState.status == ConnectionStatus.connecting ||
         connectionState.status == ConnectionStatus.reconnecting;
+    final discoveredDevice = _discoveredDevice;
+    final connectionMessage = connectionState.lastError ??
+        _scanStatusMessage ??
+        'Searching for broadcast packets...';
 
     ref.listen<DeviceConnectionState>(connectionProvider, (previous, next) {
       if (next.isConnected && context.mounted) {
@@ -157,8 +342,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
 
     if (isDemoMode) {
       _scheduleDemoConnectIfNeeded();
-    } else if (_didScheduleDemoConnect) {
-      _resetDemoAutoConnect();
+    } else {
+      if (_didScheduleDemoConnect) {
+        _resetDemoAutoConnect();
+      }
     }
 
     return Scaffold(
@@ -228,8 +415,11 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                                   width: 1,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.wifi_tethering_rounded,
+                              child: Icon(
+                                _transportIcon(
+                                  connectionState.transport,
+                                  isDemoMode: isDemoMode,
+                                ),
                                 color: AppColors.primary,
                                 size: 50,
                               ),
@@ -240,7 +430,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                     ),
                   ),
                   Text(
-                    isDemoMode ? 'DEMO LINK ACTIVE' : 'INITIALIZING LINK',
+                    _headlineLabel(isDemoMode),
                     style: AppTypography.monoSmall.copyWith(
                       color: AppColors.secondary,
                       letterSpacing: 2.4,
@@ -259,7 +449,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                   Text(
                     isDemoMode
                         ? 'Demo mode simulates discovery and opens a fake data stream after a short scan.'
-                        : 'Ensure your device is within range of the hardware module before starting discovery.',
+                        : 'The app first tries mDNS discovery, then falls back to manual IP entry if your device stays silent.',
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -271,16 +461,32 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                       children: [
                         _InfoRow(
                           label: 'SSID_SCAN',
-                          value: isBusy ? 'ACTIVE' : 'IDLE',
-                          valueColor: AppColors.secondary,
+                          value: _isScanning
+                              ? 'ACTIVE'
+                              : (_didFinishScan ? 'COMPLETE' : 'IDLE'),
+                          valueColor: _isScanning
+                              ? AppColors.secondary
+                              : AppColors.onSurface,
                         ),
                         _InfoRow(
                           label: 'PROTO',
-                          value: isDemoMode ? 'MOCK STREAM' : 'WEBSOCKET',
+                          value: _transportLabel(
+                            connectionState.transport,
+                            isDemoMode: isDemoMode,
+                          ),
                         ),
                         _InfoRow(
-                          label: 'SIGNAL',
-                          value: isDemoMode ? 'SIMULATED' : '-64 dBm',
+                          label: 'TARGET',
+                          value: discoveredDevice?.name ?? 'Awaiting device',
+                          valueColor: discoveredDevice != null
+                              ? AppColors.primary
+                              : AppColors.onSurface,
+                        ),
+                        _InfoRow(
+                          label: 'ENDPOINT',
+                          value: discoveredDevice != null
+                              ? '${discoveredDevice.ip}:${discoveredDevice.port}'
+                              : (connectionState.ipAddress ?? _defaultIp),
                           valueColor: AppColors.primary,
                         ),
                         Container(
@@ -318,8 +524,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  connectionState.lastError ??
-                                      'Searching for broadcast packets...',
+                                  connectionMessage,
                                   style: AppTypography.monoSmall.copyWith(
                                     color: AppColors.onSurfaceVariant,
                                   ),
@@ -331,15 +536,26 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  if (!isDemoMode) ...[
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _isScanning ? null : () => _runMdnsScan(),
+                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                        label: const Text('Rescan'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: isBusy
-                          ? null
-                          : () => ref
-                              .read(connectionProvider.notifier)
-                              .connect(_defaultIp),
+                      onPressed:
+                          _isScanning || isBusy ? null : _handlePrimaryAction,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         backgroundColor: AppColors.primary,
@@ -349,7 +565,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                         ),
                       ),
                       child: Text(
-                        isBusy ? 'SCANNING...' : 'SCANNING DEVICES',
+                        _primaryButtonLabel(isDemoMode),
                         style: AppTypography.headlineMedium.copyWith(
                           fontSize: 18,
                           color: AppColors.surfaceDim,
@@ -379,7 +595,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Reference ID: OM-772-CNX',
+                    discoveredDevice != null
+                        ? 'Reference ID: ${discoveredDevice.name.toUpperCase()}'
+                        : 'Reference ID: OM-772-CNX',
                     style: AppTypography.monoSmall.copyWith(
                       color: AppColors.onSurfaceVariant.withValues(alpha: 0.45),
                       letterSpacing: 2,
@@ -452,10 +670,13 @@ class _InfoRow extends StatelessWidget {
               color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.monoSmall.copyWith(
-              color: valueColor ?? AppColors.onSurface,
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTypography.monoSmall.copyWith(
+                color: valueColor ?? AppColors.onSurface,
+              ),
             ),
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../core/models/connection_state.dart';
 import '../core/models/measurement.dart';
 import '../core/models/metric_type.dart';
 import '../core/models/settings_model.dart';
@@ -49,6 +50,7 @@ class DashboardScreen extends ConsumerWidget {
                 deviceName: deviceName,
                 time: now,
                 isConnected: connectionState.isConnected,
+                transport: connectionState.transport,
               ),
               const SizedBox(height: 20),
               _SectionHeader(
@@ -179,11 +181,13 @@ class _DashboardHeader extends StatelessWidget {
     required this.deviceName,
     required this.time,
     required this.isConnected,
+    required this.transport,
   });
 
   final String deviceName;
   final DateTime time;
   final bool isConnected;
+  final ConnectionTransport? transport;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +216,11 @@ class _DashboardHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              StatusDot(isConnected: isConnected, size: 8),
+              StatusDot(
+                isConnected: isConnected,
+                size: 8,
+                transport: transport,
+              ),
               const SizedBox(width: 8),
               Text(
                 deviceName,
