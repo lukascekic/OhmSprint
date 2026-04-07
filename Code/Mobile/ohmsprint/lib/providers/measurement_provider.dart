@@ -78,6 +78,12 @@ class MeasurementHistoryNotifier extends StateNotifier<List<Measurement>>
     await _repository.saveBatch(batch);
   }
 
+  Future<void> clearHistory() async {
+    state = const [];
+    _pendingMeasurements.clear();
+    await _repository.clearMeasurements();
+  }
+
   List<Measurement> getPersistedRange(int fromTimestamp, int toTimestamp) {
     return _repository.getRange(fromTimestamp, toTimestamp);
   }

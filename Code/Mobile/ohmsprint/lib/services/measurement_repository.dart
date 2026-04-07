@@ -96,6 +96,10 @@ class MeasurementRepository {
     await _settingsBox.clear();
   }
 
+  Future<void> clearMeasurements() async {
+    await _measurementsBox.clear();
+  }
+
   SettingsModel loadSettings() {
     final raw = Map<String, dynamic>.from(_settingsBox.toMap());
     return SettingsModel.fromJson(raw);
