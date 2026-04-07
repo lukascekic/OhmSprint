@@ -681,7 +681,7 @@ _Execution note: completed by Codex on 2026-04-07 10:10:33_
 **Files:**
 - Create: `lib/widgets/nav/bottom_nav_bar.dart`
 
-- [ ] **Step 1:** Create custom bottom nav:
+- [x] **Step 1:** Create custom bottom nav:
   - Container with: backdrop blur (if performant, else solid #1a1a2e at 90%), rounded top corners (16px), padding
   - Row of 4 items: icon + label
   - Active: primary color icon + label, subtle bg circle with primary at 10%
@@ -689,10 +689,12 @@ _Execution note: completed by Codex on 2026-04-07 10:10:33_
   - Labels: monoSmall, uppercase, tracking 1.5
   - Items: Dashboard (dashboard icon), Charts (show_chart), Quality (verified_user), Settings (settings)
   - Calls `onTap(int index)` callback
-- [ ] **Step 2:** Commit: "feat: add custom glass bottom navigation bar"
+- [x] **Step 2:** Commit: "feat: add custom glass bottom navigation bar"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-07 10:13:44_
 ### Task 11: Splash Screen (S1)
 
 **Files:**
