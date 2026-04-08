@@ -1038,7 +1038,7 @@ _Execution note: completed by Codex on 2026-04-07 12:14:29_
 
 Full pipeline integration test: MockDataService → ConnectionProvider → MeasurementProvider → MeasurementRepository → Hive. Verifies the entire data flow works end-to-end.
 
-- [ ] **Step 1:** Create `data_flow_test.dart`:
+- [x] **Step 1:** Create `data_flow_test.dart`:
 ```dart
 void main() {
   group('Full data pipeline', () {
@@ -1102,11 +1102,13 @@ void main() {
   });
 }
 ```
-- [ ] **Step 2:** Run `flutter test test/integration/` — verify all pass
-- [ ] **Step 3:** Commit: "test: add integration tests for full data pipeline"
+- [x] **Step 2:** Run `flutter test test/integration/` — verify all pass
+- [x] **Step 3:** Commit: "test: add integration tests for full data pipeline"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-08 03:39:00_
 ### Task 23: Push Notifications for Alerts
 
 **Files:**

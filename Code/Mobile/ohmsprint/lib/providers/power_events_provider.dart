@@ -15,7 +15,6 @@ final powerEventsProvider =
     repository: ref.watch(measurementRepositoryProvider),
     eventStream: ref.watch(connectionProvider.notifier).eventStream,
   );
-  ref.onDispose(notifier.dispose);
   return notifier;
 });
 

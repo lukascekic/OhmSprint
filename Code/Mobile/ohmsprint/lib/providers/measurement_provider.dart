@@ -24,7 +24,6 @@ final measurementHistoryProvider =
     repository: ref.watch(measurementRepositoryProvider),
     measurementStream: ref.watch(connectionProvider.notifier).measurementStream,
   );
-  ref.onDispose(notifier.dispose);
   return notifier;
 });
 
@@ -100,10 +99,20 @@ class MeasurementHistoryNotifier extends StateNotifier<List<Measurement>>
   @override
   void dispose() {
     _isDisposed = true;
-    WidgetsBinding.instance.removeObserver(this);
     _flushTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _subscription.cancel();
-    unawaited(flushPending());
+    final pendingBatch = List<Measurement>.from(_pendingMeasurements);
+    _pendingMeasurements.clear();
+    if (pendingBatch.isNotEmpty) {
+      unawaited(
+        _repository.saveBatch(pendingBatch).catchError((error, stackTrace) {
+          debugPrint(
+            'Failed to flush pending measurements on dispose: $error\n$stackTrace',
+          );
+        }),
+      );
+    }
     super.dispose();
   }
 }
