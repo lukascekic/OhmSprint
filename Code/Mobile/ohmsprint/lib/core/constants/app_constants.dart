@@ -2,7 +2,6 @@ class AppConstants {
   const AppConstants._();
 
   static const String defaultWsUrl = 'ws://192.168.4.1/ws';
-
   static const double voltageCriticalMin = 207;
   static const double voltageWarningMin = 220;
   static const double voltageWarningMax = 240;

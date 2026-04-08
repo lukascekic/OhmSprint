@@ -12,6 +12,7 @@ import 'package:ohmsprint/providers/power_events_provider.dart';
 import 'package:ohmsprint/providers/stats_provider.dart';
 import 'package:ohmsprint/services/measurement_repository.dart';
 import 'package:ohmsprint/services/mock_data_service.dart';
+import 'package:ohmsprint/services/notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
@@ -22,6 +23,7 @@ void main() {
     late MeasurementRepository repo;
     late Directory hiveDir;
     late _IntegrationMockDataService mockService;
+    late _SilentNotificationService notificationService;
 
     setUp(() async {
       hiveDir = await Directory.systemTemp.createTemp('ohmsprint_data_flow_');
@@ -30,12 +32,14 @@ void main() {
       repo = MeasurementRepository();
       await repo.init();
       mockService = _IntegrationMockDataService();
+      notificationService = _SilentNotificationService();
 
       container = ProviderContainer(
         overrides: [
           demoModeProvider.overrideWith((ref) => true),
           measurementRepositoryProvider.overrideWithValue(repo),
           mockDataServiceProvider.overrideWithValue(mockService),
+          notificationServiceProvider.overrideWithValue(notificationService),
         ],
       );
 
@@ -234,4 +238,21 @@ class _IntegrationMockDataService extends MockDataService {
     _controller.close();
     super.dispose();
   }
+}
+
+class _SilentNotificationService extends NotificationService {
+  _SilentNotificationService() : super();
+
+  @override
+  Future<void> init() async {}
+
+  @override
+  Future<bool> requestPermission() async => true;
+
+  @override
+  Future<void> showAlert({
+    required String title,
+    required String body,
+    required int id,
+  }) async {}
 }

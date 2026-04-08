@@ -1119,7 +1119,7 @@ _Execution note: completed by Codex on 2026-04-08 03:39:00_
 
 Send local push notifications when voltage/frequency/PF goes out of range. **Foreground-only for v1** — notifications fire while the app is active and receiving data. True background alerting (WorkManager/BGTaskScheduler) is post-v1 due to WiFi lifecycle complexity (phone is on ESP32 AP, OS may drop connection when backgrounded).
 
-- [ ] **Step 1:** Create `notification_service.dart`:
+- [x] **Step 1:** Create `notification_service.dart`:
 ```dart
 class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
@@ -1156,22 +1156,24 @@ class NotificationService {
   }
 }
 ```
-- [ ] **Step 2:** Update `power_events_provider.dart`:
+- [x] **Step 2:** Update `power_events_provider.dart`:
   - When a new PowerQualityEvent arrives AND notifications are enabled in settings:
     - Sag event → notification: "Voltage Sag: 218.3V (below 207V threshold)"
     - Swell event → notification: "Voltage Swell: 254.1V (above 253V threshold)"
     - Freq event → notification: "Frequency Deviation: 49.42 Hz"
     - LPF event → notification: "Low Power Factor: 0.68"
   - Debounce: don't send same alert type more than once per 60 seconds
-- [ ] **Step 3:** Update `settings_screen.dart`:
+- [x] **Step 3:** Update `settings_screen.dart`:
   - "Enable push notifications" toggle calls `NotificationService.requestPermission()` on first enable
   - If permission denied: revert toggle and show short explanation
-- [ ] **Step 4:** Init `NotificationService` in `main.dart` and provide via Riverpod
-- [ ] **Step 5:** Test: trigger events in demo mode, verify notifications appear on a device/emulator with permissions granted
-- [ ] **Step 6:** Commit: "feat: add push notifications for power quality alerts"
+- [x] **Step 4:** Init `NotificationService` in `main.dart` and provide via Riverpod
+- [x] **Step 5:** Test: trigger events in demo mode, verify notifications appear on a device/emulator with permissions granted
+- [x] **Step 6:** Commit: "feat: add push notifications for power quality alerts"
 
 ---
 
+<!-- execute-plan: complete -->
+_Execution note: completed by Codex on 2026-04-08 04:20:15_
 ### Task 24: Polish and Edge Cases
 
 - [ ] **Step 1:** Test all tab navigation, verify IndexedStack preserves state

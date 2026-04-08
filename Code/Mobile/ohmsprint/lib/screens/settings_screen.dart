@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,6 +13,7 @@ import '../providers/demo_mode_provider.dart';
 import '../providers/measurement_provider.dart';
 import '../providers/power_events_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/notification_service.dart';
 import '../widgets/common/glass_card.dart';
 import '../widgets/common/metric_label.dart';
 
@@ -48,9 +48,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _tariffFocusNode = FocusNode();
   final _frequencyFocusNode = FocusNode();
   final _pfFocusNode = FocusNode();
-
-  static final _notificationsPlugin = FlutterLocalNotificationsPlugin();
-  static bool _notificationsInitialized = false;
 
   double? _pendingVoltageThreshold;
   String? _notificationPermissionHint;
@@ -551,68 +548,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<bool> _requestNotificationPermission() async {
-    if (kIsWeb) {
-      return false;
-    }
-
-    if (!_notificationsInitialized) {
-      try {
-        await _notificationsPlugin.initialize(
-          const InitializationSettings(
-            android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-            iOS: DarwinInitializationSettings(
-              requestAlertPermission: false,
-              requestBadgePermission: false,
-              requestSoundPermission: false,
-            ),
-            macOS: DarwinInitializationSettings(
-              requestAlertPermission: false,
-              requestBadgePermission: false,
-              requestSoundPermission: false,
-            ),
-          ),
-        );
-      } catch (error) {
-        if (kDebugMode) {
-          debugPrint('Notification init failed: $error');
-        }
-        return false;
-      }
-      _notificationsInitialized = true;
-    }
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return await _notificationsPlugin
-                .resolvePlatformSpecificImplementation<
-                    AndroidFlutterLocalNotificationsPlugin>()
-                ?.requestNotificationsPermission() ??
-            false;
-      case TargetPlatform.iOS:
-        return await _notificationsPlugin
-                .resolvePlatformSpecificImplementation<
-                    IOSFlutterLocalNotificationsPlugin>()
-                ?.requestPermissions(
-                  alert: true,
-                  badge: true,
-                  sound: true,
-                ) ??
-            false;
-      case TargetPlatform.macOS:
-        return await _notificationsPlugin
-                .resolvePlatformSpecificImplementation<
-                    MacOSFlutterLocalNotificationsPlugin>()
-                ?.requestPermissions(
-                  alert: true,
-                  badge: true,
-                  sound: true,
-                ) ??
-            false;
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-      case TargetPlatform.fuchsia:
-        return false;
-    }
+    return ref.read(notificationServiceProvider).requestPermission();
   }
 
   Future<void> _confirmClearLocalData() async {
