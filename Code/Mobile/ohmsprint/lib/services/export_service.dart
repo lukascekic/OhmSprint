@@ -19,9 +19,13 @@ final exportServiceProvider = Provider<ExportService>((ref) {
 });
 
 class ExportService {
-  const ExportService();
+  const ExportService({
+    Future<Directory> Function()? temporaryDirectoryProvider,
+  }) : _temporaryDirectoryProvider =
+            temporaryDirectoryProvider ?? getTemporaryDirectory;
 
   static const int pdfRowLimit = 10000;
+  final Future<Directory> Function() _temporaryDirectoryProvider;
 
   Future<String> generateCsv(
     List<Measurement> data,
@@ -215,7 +219,7 @@ class ExportService {
   }
 
   Future<File> _createFile(String extension) async {
-    final tempDir = await getTemporaryDirectory();
+    final tempDir = await _temporaryDirectoryProvider();
     final fileName =
         'ohmsprint-export-${DateTime.now().millisecondsSinceEpoch}.$extension';
     return File('${tempDir.path}${Platform.pathSeparator}$fileName');

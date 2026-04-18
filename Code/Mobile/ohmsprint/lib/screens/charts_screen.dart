@@ -46,14 +46,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             .toList()
         : repository.getRange(fromTimestamp, now);
     final chartHistory = _applyDownsampling(rawHistory);
+    final hasData = chartHistory.isNotEmpty;
     final spots = _toSpots(chartHistory, _selectedMetric);
     final stats = ref.watch(
       statsProvider(
           (type: _selectedMetric, secondsBack: _selectedRangeSeconds)),
     );
-    final currentValue = chartHistory.isEmpty
-        ? 0.0
-        : chartHistory.last.valueFor(_selectedMetric);
+    final currentValue =
+        hasData ? chartHistory.last.valueFor(_selectedMetric) : 0.0;
     final minuteAgoMeasurement = _findClosestHistoricalValue(
       chartHistory,
       now - const Duration(minutes: 1).inMilliseconds,
@@ -151,12 +151,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          formatMetric(_selectedMetric, currentValue),
+                          hasData
+                              ? formatMetric(_selectedMetric, currentValue)
+                              : '--',
                           style: AppTypography.monoLarge.copyWith(
                             color: AppColors.onSurface,
                           ),
                         ),
-                        if (_selectedMetric.unit.isNotEmpty) ...[
+                        if (hasData && _selectedMetric.unit.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
@@ -170,39 +172,47 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                           ),
                         ],
                         const Spacer(),
-                        _DeltaBadge(
-                          delta: delta,
-                          color: _selectedMetric.color,
-                        ),
+                        if (hasData)
+                          _DeltaBadge(
+                            delta: delta,
+                            color: _selectedMetric.color,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 264,
-                      child: LiveLineChart(
-                        data: spots,
-                        lineColor: _selectedMetric.color,
-                        minY: chartMinY,
-                        maxY: chartMaxY,
+                    if (!hasData) ...[
+                      const _EmptyChartState(),
+                      const SizedBox(height: 18),
+                    ] else ...[
+                      SizedBox(
+                        height: 264,
+                        child: LiveLineChart(
+                          data: spots,
+                          lineColor: _selectedMetric.color,
+                          minY: chartMinY,
+                          maxY: chartMaxY,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
+                      const SizedBox(height: 18),
+                    ],
                     TimeRangeSelector(
                       selectedSeconds: _selectedRangeSeconds,
                       onChanged: (seconds) {
                         setState(() => _selectedRangeSeconds = seconds);
                       },
                     ),
-                    const SizedBox(height: 18),
-                    StatsRow(
-                      min: stats.min,
-                      avg: stats.avg,
-                      max: stats.max,
-                      unit: _selectedMetric.unit,
-                      accentColor: _selectedMetric.color,
-                      formatter: (value) =>
-                          formatMetric(_selectedMetric, value),
-                    ),
+                    if (hasData) ...[
+                      const SizedBox(height: 18),
+                      StatsRow(
+                        min: stats.min,
+                        avg: stats.avg,
+                        max: stats.max,
+                        unit: _selectedMetric.unit,
+                        accentColor: _selectedMetric.color,
+                        formatter: (value) =>
+                            formatMetric(_selectedMetric, value),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -278,6 +288,55 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
 
     final padding = (maxValue - minValue).abs() * 0.12;
     return maxValue + padding;
+  }
+}
+
+class _EmptyChartState extends StatelessWidget {
+  const _EmptyChartState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Icon(
+              Icons.show_chart_rounded,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'No telemetry data yet',
+            style: AppTypography.headlineMedium.copyWith(
+              fontSize: 18,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Connect to a device or keep demo mode enabled to start plotting live measurements.',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
