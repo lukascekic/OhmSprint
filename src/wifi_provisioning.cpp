@@ -24,7 +24,7 @@ void WiFiProvisioning::begin() {
 }
 
 void WiFiProvisioning::createAccessPoint() {
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(AP_SSID, AP_PASS, AP_CHANNEL);
     
     IPAddress IP = WiFi.softAPIP();
@@ -271,7 +271,7 @@ void WiFiProvisioning::loop() {
 }
 
 bool WiFiProvisioning::connect(const char* ssid, const char* pass) {
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid, pass);
     
     state = CONNECTING;
