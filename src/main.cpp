@@ -1,16 +1,17 @@
 #include "PsychicHandler.h"
 #include "PsychicResponse.h"
-#include "simple.pb.h"
 #include "wifi_provisioning.h"
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <DNSServer.h>
 #include <FS.h>
 #include <LittleFS.h>
 #include <PsychicHttp.h>
+#include <PsychicRequest.h>
 #include <WiFi.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
 
-static WiFiProvisioning wifiProv;
 static PsychicHttpServer server;
 
 bool lfsMounted = false;
@@ -70,96 +71,124 @@ esp_err_t serveStaticFile(const char *path, PsychicResponse *response) {
   return err;
 }
 
-static SensorData dummy_sensor_data() {
-  SensorData data = SensorData_init_zero;
-  data.temperature = 23.5f;
-  data.humidity = 65.0f;
-  data.timestamp = millis();
-  strcpy(data.sensor_id, "ESP32C3-001");
-  return data;
-}
-
-esp_err_t handleProtobuf(PsychicRequest *request, PsychicResponse *response) {
-  SensorResponse resp = SensorResponse_init_zero;
-  resp.success = true;
-  strncpy(resp.message, "OK", sizeof(resp.message) - 1);
-  resp.data.temperature = 23.5f;
-  resp.data.humidity = 65.0f;
-  resp.data.timestamp = millis();
-  strncpy(resp.data.sensor_id, "ESP32C3-001", sizeof(resp.data.sensor_id) - 1);
-  resp.has_data = true;
-
-  uint8_t buffer[256];
-  pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-  if (!pb_encode(&stream, SensorResponse_fields, &resp)) {
-    response->setContentType("text/plain");
-    return response->send("Encoding failed");
-  }
-
-  response->setContentType("application/x-protobuf");
-  return response->send(200, "application/x-protobuf", buffer,
-                        stream.bytes_written);
-}
-
-esp_err_t handleJson(PsychicRequest *request, PsychicResponse *response) {
-  SensorData data = dummy_sensor_data();
-  response->setContentType("application/json");
-
-  char json[256];
-  snprintf(json, sizeof(json),
-           "{\"temperature\":%.1f,\"humidity\":%.1f,\"timestamp\":%lu,\"sensor_"
-           "id\":\"%s\"}",
-           data.temperature, data.humidity, data.timestamp, data.sensor_id);
-
-  return response->send(json);
-}
-
 esp_err_t handleRoot(PsychicRequest *request, PsychicResponse *response) {
   return serveStaticFile(request->url().c_str(), response);
 }
 
+esp_err_t handleCaptiveRedirect(PsychicRequest *request,
+                                PsychicResponse *response) {
+  String redirectURL = "http://" + AP_IP.toString() + "/configure/index.html";
+  return response->redirect(redirectURL.c_str());
+}
+
+esp_err_t handleCaptiveOK(PsychicRequest *request, PsychicResponse *response) {
+  return response->send(200, "text/plain", "");
+}
+
+esp_err_t handle404(PsychicRequest *request, PsychicResponse *response) {
+  return response->send(404, "text/plain", "Not Found");
+}
+
+esp_err_t handleConfigure(PsychicRequest *request, PsychicResponse *response) {
+  String body = request->body();
+  String ssid, password;
+
+  int ssidStart = body.indexOf("ssid=");
+  int passStart = body.indexOf("&password=");
+
+  if (ssidStart >= 0) {
+    ssidStart += 5;
+    if (passStart > ssidStart) {
+      ssid = body.substring(ssidStart, passStart);
+      password = body.substring(passStart + 10);
+      ssid.replace("+", " ");
+      password.replace("+", " ");
+    } else {
+      ssid = body.substring(ssidStart);
+      ssid.replace("+", " ");
+    }
+  }
+
+  JsonDocument doc;
+  if (ssid.length() == 0 || ssid.length() > 31) {
+    doc["success"] = false;
+    doc["message"] = "Invalid SSID";
+  } else {
+    wifi_save_credentials(ssid.c_str(), password.c_str());
+    wifi_start_sta(ssid.c_str(), password.c_str());
+    doc["success"] = true;
+  }
+
+  String json;
+  serializeJson(doc, json);
+  return response->send(200, "application/json", json.c_str());
+}
+
 esp_err_t handleStatus(PsychicRequest *request, PsychicResponse *response) {
-  char json[256];
-  snprintf(json, sizeof(json), "{\"ssid\":\"%s\",\"ip\":\"%s\",\"rssi\":%d}",
-           wifiProv.getCurrentSSID().c_str(),
-           wifiProv.getLocalIP().toString().c_str(), WiFi.RSSI());
-  return response->send(json);
+  JsonDocument doc;
+  WiFiState state = wifi_get_state();
+
+  switch (state) {
+  case AP_ONLY:
+    doc["state"] = "idle";
+    break;
+  case CONNECTING:
+    doc["state"] = "connecting";
+    break;
+  case CONNECTED:
+    doc["state"] = "connected";
+    doc["ip"] = wifi_get_sta_ip();
+    break;
+  case FAILED:
+    doc["state"] = "failed";
+    doc["message"] = "Connection failed";
+    break;
+  }
+
+  String json;
+  serializeJson(doc, json);
+  return response->send(200, "application/json", json.c_str());
+}
+
+esp_err_t handleCatchAll(PsychicRequest *request, PsychicResponse *response) {
+  String redirectURL = "http://" + AP_IP.toString() + "/configure";
+  return response->redirect(redirectURL.c_str());
 }
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
+  if (!Serial)
+    delay(2000); // Wait for USB CDC on ESP32-C3
 
   Serial.println("\n\n=== ESP32-C3 Sensor Server ===");
 
   mountLittleFS();
 
-  wifiProv.setServer(&server);
-  wifiProv.begin();
+  // WiFi provisioning
+  wifi_init();
 
-  if (wifiProv.getState() == WiFiProvisioning::STATION_MODE) {
-    Serial.println("WiFi connected, starting main server...");
-  } else {
-    Serial.println(
-        "Access Point mode. Provisioning endpoints available at 192.168.4.1");
-  }
+  // Captive portal detection endpoints
+  server.on("/generate_204", HTTP_GET, handleCaptiveRedirect);
+  server.on("/hotspot-detect.html", HTTP_GET, handleCaptiveRedirect);
+  server.on("/canonical.html", HTTP_GET, handleCaptiveRedirect);
+  server.on("/ncsi.txt", HTTP_GET, handleCaptiveRedirect);
+  server.on("/connecttest.txt", HTTP_GET, handleCaptiveRedirect);
+  server.on("/success.txt", HTTP_GET, handleCaptiveOK);
+  server.on("/wpad.dat", HTTP_GET, handle404);
 
-  server.on("/", HTTP_GET, handleRoot);
+  // Configuration endpoints
+  server.on("/configure", HTTP_POST, handleConfigure);
   server.on("/status", HTTP_GET, handleStatus);
-  server.on("/data/json", HTTP_GET, handleJson);
-  server.on("/data/proto", HTTP_GET, handleProtobuf);
+
+  // Static file serving
+  server.on("/", HTTP_GET, handleRoot);
   server.on("/*", HTTP_GET, handleRoot);
+
+  // Catch-all redirect for captive portal
+  server.onNotFound(handleCatchAll);
 
   server.begin();
 }
 
-void loop() {
-  wifiProv.loop();
-
-  if (wifiProv.getState() == WiFiProvisioning::STATION_MODE) {
-    if (WiFi.status() != WL_CONNECTED) {
-      wifiProv.handleDisconnection();
-    }
-  }
-}
+void loop() { wifi_loop(); }

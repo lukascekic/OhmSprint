@@ -1,0 +1,192 @@
+---
+const currentPath = Astro.url.pathname;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>WiFi Configuration</title>
+		<style>
+			* { box-sizing: border-box; }
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+				margin: 0;
+				padding: 20px;
+				background: #f5f5f5;
+			}
+			.container {
+				max-width: 400px;
+				margin: 0 auto;
+				background: white;
+				padding: 30px;
+				border-radius: 10px;
+				box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			}
+			h1 { text-align: center; color: #333; margin-bottom: 30px; }
+			.nav { text-align: center; margin-bottom: 20px; }
+			.nav a { color: #007bff; text-decoration: none; }
+			.nav a:hover { text-decoration: underline; }
+			.status {
+				padding: 15px;
+				border-radius: 5px;
+				margin-bottom: 20px;
+				text-align: center;
+			}
+			.status.connecting { background: #fff3cd; color: #856404; }
+			.status.success { background: #d4edda; color: #155724; }
+			.status.error { background: #f8d7da; color: #721c24; }
+			.status.idle { background: #e2e3e5; color: #383d41; }
+			label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+			input[type='text'], input[type='password'] {
+				width: 100%;
+				padding: 12px;
+				margin-bottom: 20px;
+				border: 1px solid #ddd;
+				border-radius: 5px;
+				font-size: 16px;
+			}
+			button {
+				width: 100%;
+				padding: 15px;
+				background: #007bff;
+				color: white;
+				border: none;
+				border-radius: 5px;
+				font-size: 16px;
+				cursor: pointer;
+			}
+			button:hover { background: #0056b3; }
+			button:disabled { background: #ccc; cursor: not-allowed; }
+			.hidden { display: none; }
+			.spinner {
+				display: inline-block;
+				width: 20px;
+				height: 20px;
+				border: 3px solid rgba(0,0,0,0.1);
+				border-radius: 50%;
+				border-top-color: #856404;
+				animation: spin 1s ease-in-out infinite;
+				margin-right: 10px;
+			}
+			@keyframes spin { to { transform: rotate(360deg); } }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>WiFi Configuration</h1>
+			<div class="nav"><a href="/">&larr; Back to Home</a></div>
+			<div id="status" class="status idle">Access Point Active</div>
+			<form id="wifiForm">
+				<label for="ssid">Network Name (SSID)</label>
+				<input type="text" id="ssid" name="ssid" maxlength="31" required placeholder="Enter WiFi network name">
+				<label for="password">Password</label>
+				<input type="password" id="password" name="password" maxlength="63" placeholder="Enter WiFi password">
+				<button type="submit" id="submitBtn">Connect</button>
+			</form>
+			<div id="message" class="hidden"></div>
+		</div>
+
+		<script>
+			const form = document.getElementById('wifiForm');
+			const statusEl = document.getElementById('status');
+			const message = document.getElementById('message');
+			const submitBtn = document.getElementById('submitBtn');
+			let pollingInterval = null;
+			let isConnecting = false;
+
+			async function checkStatus() {
+				try {
+					const resp = await fetch('/status');
+					const data = await resp.json();
+					
+					if (data.state === 'connecting') {
+						statusEl.className = 'status connecting';
+						statusEl.innerHTML = '<span class="spinner"></span>Connecting...';
+					} else if (data.state === 'connected') {
+						statusEl.className = 'status success';
+						statusEl.textContent = 'Connected! IP: ' + data.ip;
+						message.classList.remove('hidden');
+						message.style.background = '#d4edda';
+						message.style.color = '#155724';
+						message.style.padding = '15px';
+						message.style.borderRadius = '5px';
+						message.style.marginTop = '20px';
+						message.textContent = 'WiFi configured successfully.';
+						clearInterval(pollingInterval);
+					} else if (data.state === 'failed') {
+						statusEl.className = 'status error';
+						statusEl.textContent = 'Connection Failed';
+						message.classList.remove('hidden');
+						message.style.background = '#f8d7da';
+						message.style.color = '#721c24';
+						message.style.padding = '15px';
+						message.style.borderRadius = '5px';
+						message.style.marginTop = '20px';
+						message.textContent = data.message || 'Could not connect to the specified network.';
+						submitBtn.disabled = false;
+						form.style.display = 'block';
+						clearInterval(pollingInterval);
+						isConnecting = false;
+					}
+				} catch (err) {
+					console.error('Status check failed:', err);
+				}
+			}
+
+			form.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				if (isConnecting) return;
+
+				const ssid = document.getElementById('ssid').value;
+				const password = document.getElementById('password').value;
+
+				if (!ssid || ssid.length > 31) {
+					alert('Invalid SSID');
+					return;
+				}
+
+				isConnecting = true;
+				submitBtn.disabled = true;
+				form.style.display = 'none';
+				statusEl.className = 'status connecting';
+				statusEl.innerHTML = '<span class="spinner"></span>Connecting...';
+				message.classList.add('hidden');
+
+				try {
+					const formData = new URLSearchParams();
+					formData.append('ssid', ssid);
+					formData.append('password', password);
+
+					const response = await fetch('/configure', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+						body: formData.toString()
+					});
+
+					const result = await response.json();
+
+					if (result.success) {
+						pollingInterval = setInterval(checkStatus, 1000);
+						checkStatus();
+					} else {
+						statusEl.className = 'status error';
+						statusEl.textContent = 'Error: ' + (result.message || 'Unknown error');
+						submitBtn.disabled = false;
+						form.style.display = 'block';
+						isConnecting = false;
+					}
+				} catch (err) {
+					statusEl.className = 'status error';
+					statusEl.textContent = 'Request failed';
+					submitBtn.disabled = false;
+					form.style.display = 'block';
+					isConnecting = false;
+				}
+			});
+
+			checkStatus();
+		</script>
+	</body>
+</html>

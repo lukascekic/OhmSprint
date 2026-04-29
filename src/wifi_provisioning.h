@@ -1,63 +1,39 @@
-#pragma once
+#ifndef WIFI_PROVISIONING_H
+#define WIFI_PROVISIONING_H
 
 #include <Arduino.h>
-#include <Preferences.h>
-#include <PsychicHttp.h>
 #include <WiFi.h>
+#include <DNSServer.h>
+#include <Preferences.h>
 
-class WiFiProvisioning {
-public:
-  enum State { AP_MODE, CONNECTING, STATION_MODE };
-
-  static constexpr const char *AP_SSID = "ESP32-Config";
-  static constexpr const char *AP_PASS = "";
-  static constexpr uint8_t AP_CHANNEL = 1;
-  static constexpr size_t MAX_WIFI_SSID_LEN = 32;
-  static constexpr size_t MAX_WIFI_PASS_LEN = 64;
-  static constexpr unsigned long CONNECT_TIMEOUT_MS = 10000;
-  static constexpr uint8_t MAX_RETRIES = 3;
-
-private:
-  State state = AP_MODE;
-  Preferences prefs;
-  uint8_t retryCount = 0;
-  unsigned long connectStartTime = 0;
-  PsychicHttpServer *server = nullptr;
-  PsychicEndpoint *rootEndpoint = nullptr;
-  PsychicEndpoint *configEndpoint = nullptr;
-  PsychicEndpoint *statusEndpoint = nullptr;
-
-public:
-  void begin();
-  void loop();
-  void setServer(PsychicHttpServer *srv);
-  State getState() const { return state; }
-  String getCurrentSSID() const;
-  bool hasStoredCredentials();
-  bool clearCredentials();
-  bool connect(const char *ssid, const char *pass);
-  void handleConnectTimeout();
-  void handleDisconnection();
-  IPAddress getLocalIP() const;
-
-private:
-  void createAccessPoint();
-  void registerProvisioningEndpoints();
-  void unregisterProvisioningEndpoints();
-  esp_err_t handleRoot(PsychicRequest *request, PsychicResponse *response);
-  esp_err_t handleConfigure(PsychicRequest *request, PsychicResponse *response);
-  esp_err_t handleStatus(PsychicRequest *request, PsychicResponse *response);
-  static esp_err_t staticHandleRoot(PsychicRequest *request,
-                                    PsychicResponse *response) {
-    return instance->handleRoot(request, response);
-  }
-  static esp_err_t staticHandleConfigure(PsychicRequest *request,
-                                         PsychicResponse *response) {
-    return instance->handleConfigure(request, response);
-  }
-  static esp_err_t staticHandleStatus(PsychicRequest *request,
-                                      PsychicResponse *response) {
-    return instance->handleStatus(request, response);
-  }
-  static WiFiProvisioning *instance;
+enum WiFiState {
+  AP_ONLY,
+  CONNECTING,
+  CONNECTED,
+  FAILED
 };
+
+// Constants
+extern const char* AP_SSID;
+extern const char* AP_PASSWORD;
+extern const int AP_CHANNEL;
+extern const int MAX_AP_CLIENTS;
+extern const IPAddress AP_IP;
+extern const IPAddress AP_GATEWAY;
+extern const IPAddress AP_SUBNET;
+extern const uint32_t STA_CONNECT_TIMEOUT;
+extern const byte DNS_PORT;
+
+// Functions
+void wifi_init();
+bool wifi_save_credentials(const char* ssid, const char* password);
+bool wifi_load_credentials(String &ssid, String &password);
+void wifi_start_ap();
+void wifi_start_sta(const char* ssid, const char* password);
+WiFiState wifi_get_state();
+String wifi_get_sta_ip();
+void wifi_loop();
+void wifi_start_captive_portal();
+void wifi_stop_captive_portal();
+
+#endif
