@@ -11,8 +11,63 @@
 #include <WiFi.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
+#include <simple.pb.h>
 
 static PsychicHttpServer server;
+
+#ifndef UART_BAUD
+#define UART_BAUD 115200
+#endif
+
+static uint8_t uart_buffer[256];
+static uint8_t uart_buffer_idx = 0;
+static uint16_t expected_length = 0;
+static bool reading_length = true;
+
+void handle_measure_data(const MeasureData &data) {
+  Serial.println("--- MeasureData Received ---");
+  Serial.printf("Current:      %.2f A\n", data.current);
+  Serial.printf("Voltage:      %.2f V\n", data.voltage);
+  Serial.printf("Power:        %.2f W\n", data.power);
+  Serial.printf("Frequency:    %.2f Hz\n", data.frequency);
+  Serial.printf("Power Usage:  %.2f kWh\n", data.power_usage);
+  Serial.printf("SD Logs:      %s\n",
+                data.sd_logs_enable ? "enabled" : "disabled");
+  Serial.printf("WiFi:         %s\n",
+                data.wifi_enable ? "enabled" : "disabled");
+  Serial.println("--------------------------------");
+}
+
+void process_uart_byte(uint8_t byte) {
+  if (reading_length) {
+    uart_buffer[uart_buffer_idx++] = byte;
+    if (uart_buffer_idx >= 4) {
+      expected_length = (uart_buffer[0] << 8) | uart_buffer[1];
+      expected_length = (expected_length << 8) | uart_buffer[2];
+      expected_length = (expected_length << 8) | uart_buffer[3];
+      uart_buffer_idx = 0;
+      reading_length = false;
+      if (expected_length > sizeof(uart_buffer)) {
+        Serial.printf("Error: Message too large (%d bytes)\n", expected_length);
+        reading_length = true;
+      }
+    }
+  } else {
+    uart_buffer[uart_buffer_idx++] = byte;
+    if (uart_buffer_idx >= expected_length) {
+      pb_istream_t stream =
+          pb_istream_from_buffer(uart_buffer, uart_buffer_idx);
+      MeasureData data = MeasureData_init_default;
+      if (pb_decode(&stream, MeasureData_fields, &data)) {
+        handle_measure_data(data);
+      } else {
+        Serial.println("Error: Failed to decode protobuf message");
+      }
+      uart_buffer_idx = 0;
+      reading_length = true;
+    }
+  }
+}
 
 bool lfsMounted = false;
 
@@ -178,6 +233,10 @@ void setup() {
 
   Serial.println("\n\n=== ESP32-C3 Sensor Server ===");
 
+  Serial1.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+  Serial.printf("UART1 initialized on GPIO%d(RX)/GPIO%d(TX) at %d baud\n",
+                UART_RX_PIN, UART_TX_PIN, UART_BAUD);
+
   mountLittleFS();
 
   // WiFi provisioning
@@ -206,4 +265,10 @@ void setup() {
   server.begin();
 }
 
-void loop() { wifi_loop(); }
+void loop() {
+  wifi_loop();
+
+  while (Serial1.available()) {
+    process_uart_byte(Serial1.read());
+  }
+}
