@@ -32,11 +32,26 @@ esp_err_t serveStaticFile(const char *path, PsychicResponse *response) {
   }
 
   String filePath = path;
+
+  // Normalize: remove trailing slash (except for root)
+  if (filePath != "/" && filePath.endsWith("/")) {
+    filePath.remove(filePath.length() - 1);
+  }
+
   if (filePath == "/") {
     filePath = "/index.html";
   }
 
   File file = LittleFS.open(filePath, "r");
+
+  if (file.isDirectory()) {
+    String indexFilePath = filePath + "/index.html";
+    file = LittleFS.open(indexFilePath, "r");
+    if (file) {
+      filePath = indexFilePath;
+    }
+  }
+
   if (!file) {
     return response->send(404, "text/plain", "File not found");
   }
