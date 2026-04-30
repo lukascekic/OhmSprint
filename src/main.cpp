@@ -1,5 +1,7 @@
+#include "HardwareSerial.h"
 #include "PsychicHandler.h"
 #include "PsychicResponse.h"
+#include "PsychicWebSocket.h"
 #include "wifi_provisioning.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -14,17 +16,26 @@
 #include <simple.pb.h>
 
 static PsychicHttpServer server;
+static PsychicWebSocketHandler *wsHandler;
 
-#ifndef UART_BAUD
-#define UART_BAUD 115200
-#endif
+static MeasureData latest_data = MeasureData_init_default;
+static bool has_data = false;
+static uint32_t measurement_timestamp = 0;
 
 static uint8_t uart_buffer[256];
 static uint8_t uart_buffer_idx = 0;
 static uint16_t expected_length = 0;
 static bool reading_length = true;
 
+static uint32_t getTimestamp() {
+  return millis() / 1000;
+}
+
 void handle_measure_data(const MeasureData &data) {
+  latest_data = data;
+  has_data = true;
+  measurement_timestamp = millis() / 1000;
+
   Serial.println("--- MeasureData Received ---");
   Serial.printf("Current:      %.2f A\n", data.current);
   Serial.printf("Voltage:      %.2f V\n", data.voltage);
@@ -36,6 +47,20 @@ void handle_measure_data(const MeasureData &data) {
   Serial.printf("WiFi:         %s\n",
                 data.wifi_enable ? "enabled" : "disabled");
   Serial.println("--------------------------------");
+
+  if (wsHandler) {
+    JsonDocument doc;
+    doc["current"] = data.current;
+    doc["voltage"] = data.voltage;
+    doc["power"] = data.power;
+    doc["frequency"] = data.frequency;
+    doc["power_usage"] = data.power_usage;
+    doc["timestamp"] = measurement_timestamp;
+
+    String json;
+    serializeJson(doc, json);
+    wsHandler->sendAll(HTTPD_WS_TYPE_TEXT, json.c_str(), json.length());
+  }
 }
 
 void process_uart_byte(uint8_t byte) {
@@ -225,6 +250,29 @@ esp_err_t handleCatchAll(PsychicRequest *request, PsychicResponse *response) {
   return response->redirect(redirectURL.c_str());
 }
 
+esp_err_t handleMeasurements(PsychicRequest *request,
+                             PsychicResponse *response) {
+  JsonDocument doc;
+
+  if (!has_data) {
+    doc["error"] = "No measurement data available";
+    String json;
+    serializeJson(doc, json);
+    return response->send(404, "application/json", json.c_str());
+  }
+
+  doc["current"] = latest_data.current;
+  doc["voltage"] = latest_data.voltage;
+  doc["power"] = latest_data.power;
+  doc["frequency"] = latest_data.frequency;
+  doc["power_usage"] = latest_data.power_usage;
+  doc["timestamp"] = measurement_timestamp;
+
+  String json;
+  serializeJson(doc, json);
+  return response->send(200, "application/json", json.c_str());
+}
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -254,6 +302,17 @@ void setup() {
   // Configuration endpoints
   server.on("/configure", HTTP_POST, handleConfigure);
   server.on("/status", HTTP_GET, handleStatus);
+  server.on("/api/measurements", HTTP_GET, handleMeasurements);
+
+  // WebSocket endpoint
+  wsHandler = new PsychicWebSocketHandler();
+  wsHandler->onOpen([](PsychicWebSocketClient *client) {
+    Serial.println("WebSocket client connected");
+  });
+  wsHandler->onClose([](PsychicWebSocketClient *client) {
+    Serial.println("WebSocket client disconnected");
+  });
+  server.on("/ws", wsHandler);
 
   // Static file serving
   server.on("/", HTTP_GET, handleRoot);
