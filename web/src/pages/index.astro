@@ -1,17 +1,29 @@
 ---
-
+import MainLayout from '../layouts/MainLayout.astro';
+import DashboardHeader from '../components/DashboardHeader.astro';
+import MetricCard from '../components/MetricCard.astro';
+import ChartCard from '../components/ChartCard.astro';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<MainLayout title="Sensor Dashboard">
+    <DashboardHeader />
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <MetricCard label="Voltage" valueId="voltage-value" unit="V" color="text-blue-600" />
+        <MetricCard label="Current" valueId="current-value" unit="A" color="text-orange-500" />
+        <MetricCard label="Power" valueId="power-value" unit="W" color="text-green-600" />
+        <MetricCard label="Frequency" valueId="frequency-value" unit="Hz" color="text-purple-600" />
+        <MetricCard label="Energy Used" valueId="energy-value" unit="kWh" color="text-gray-700" />
+    </div>
+
+    <div class="space-y-6">
+        <ChartCard title="Voltage" canvasId="chart-voltage" />
+        <ChartCard title="Current" canvasId="chart-current" />
+        <ChartCard title="Power" canvasId="chart-power" />
+        <ChartCard title="Frequency" canvasId="chart-frequency" />
+    </div>
+</MainLayout>
+
+<script>
+    import '../scripts/dashboard.ts';
+</script>
