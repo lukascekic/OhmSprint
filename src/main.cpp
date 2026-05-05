@@ -2,6 +2,7 @@
 #include "PsychicHandler.h"
 #include "PsychicResponse.h"
 #include "PsychicWebSocket.h"
+#include "sd_card.h"
 #include "wifi_provisioning.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -60,6 +61,10 @@ void handle_measure_data(const MeasureData &data) {
     String json;
     serializeJson(doc, json);
     wsHandler->sendAll(HTTPD_WS_TYPE_TEXT, json.c_str(), json.length());
+  }
+
+  if (data.sd_logs_enable) {
+    sdCard.logEntry(measurement_timestamp, data);
   }
 }
 
@@ -286,6 +291,7 @@ void setup() {
                 UART_RX_PIN, UART_TX_PIN, UART_BAUD);
 
   mountLittleFS();
+  sdCard.begin();
 
   // WiFi provisioning
   wifi_init();
