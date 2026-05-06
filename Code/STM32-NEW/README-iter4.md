@@ -13,7 +13,7 @@ signals to isolate failures quickly.
   bring-up speed.
 - I2C1 OLED support with an ACK canary during display init.
 - USART1 debug console for PC-side bring-up logs.
-- USART2 raw nanopb `MeasureData` transmit path toward ESP32.
+- USART2 length-prefixed nanopb `MeasureData` transmit path toward ESP32.
 - TIM2 generated and configured for future buzzer/CF work, but not started at
   runtime in this branch.
 - ATM90E26 initialization, register writes, checksum verification, periodic
@@ -23,8 +23,8 @@ signals to isolate failures quickly.
 
 ## What This Iteration Does Not Contain
 
-- No extra binary ESP32 framing with magic bytes, length, and CRC16 around the
-  protobuf payload.
+- No extra binary ESP32 framing with magic bytes and CRC16 around the protobuf
+  payload.
 - No ESP32 command/control state machine.
 - No runtime EXTI handling for `ZX`, `IRQ`, or `WARN_OUT`.
 - No CF pulse accumulation from `CF1` / `CF2`.
@@ -70,9 +70,9 @@ belongs in the next branch.
   Minimal nanopb runtime files needed for encoding on STM32.
 
 - `Core/Src/uart_protocol.c`, `Core/Inc/uart_protocol.h`  
-  USART2 sender for raw nanopb `MeasureData` payloads. There is intentionally
-  no magic byte, length prefix, or CRC in this iteration because the current
-  ESP32 test code expects only the protobuf message bytes.
+  USART2 sender for nanopb `MeasureData` payloads with a 4-byte big-endian
+  payload length prefix. There is intentionally no magic byte or CRC in this
+  iteration because the current ESP32 test code expects exactly this format.
 
 - `Core/Src/esp_control.c`, `Core/Inc/esp_control.h`  
   ESP-related GPIO defaults and state labels. This branch logs ESP control
@@ -128,8 +128,14 @@ HF
 
 ## USART2 ESP32 Measurement Payload
 
-This branch sends one raw nanopb-encoded `MeasureData` payload to ESP32 once
-per successful measurement. The schema is:
+This branch sends one nanopb-encoded `MeasureData` payload to ESP32 once per
+successful measurement. The UART packet format is:
+
+```text
+[4-byte big-endian payload length][protobuf payload]
+```
+
+The schema is:
 
 ```proto
 syntax = "proto3";
@@ -147,21 +153,20 @@ message MeasureData {
 
 Notes:
 
-- The payload is not framed in iter4: no magic byte, no length prefix, no CRC.
-- ESP32 must know where one UART message ends. For this temporary test format,
-  that usually means reading by expected packet size, UART idle timeout, or the
-  current parser behavior already implemented by the ESP32 developer.
+- The payload has a 4-byte big-endian length prefix so the current ESP32 parser
+  can find message boundaries.
+- There is still no magic byte and no CRC.
 - Field scaling sent by STM32:
   - `voltage`: volts
   - `current`: amperes from line current
   - `power`: active power in watts
   - `frequency`: hertz
-  - `power_usage`: accumulated import energy since STM32 boot, in Wh
+  - `power_usage`: accumulated import energy since STM32 boot, in kWh
   - `sd_logs_enable`: currently always `true`
   - `wifi_enable`: currently always `true`
-- This is the ESP-compatible protobuf payload, but not the final robust UART
-  transport. Magic/length/CRC framing can be added after basic STM32-ESP32
-  communication is confirmed.
+- This is the ESP-compatible protobuf payload and length prefix, but not the
+  final robust UART transport. Magic/CRC framing can be added after basic
+  STM32-ESP32 communication is confirmed.
 
 ## Test-Day Debug Checklist
 
@@ -198,7 +203,7 @@ Use USART1 as the primary bring-up truth source.
    - If USART1 measurements exist but ESP sees nothing: focus on USART2 pins,
      baud rate, mux route, ESP RX configuration, and ground/common power.
    - If ESP receives bytes but decode fails: first confirm that the ESP parser
-     expects raw protobuf bytes with no magic/length/CRC wrapper.
+     expects a 4-byte big-endian length followed by protobuf bytes.
 
 ## Failure Map
 
@@ -223,8 +228,8 @@ Use USART1 as the primary bring-up truth source.
   - `IgainL = 0x7A13`
 - Total energy is accumulated in STM32 RAM only in this branch, so it resets on
   MCU reset.
-- USART2 uses nanopb encoding, but not robust transport framing. This is a
-  deliberate temporary compatibility choice for the current ESP32 test code.
+- USART2 uses nanopb encoding with the ESP32 team's 4-byte big-endian length
+  prefix, but not robust magic/CRC transport framing.
 
 ## Build
 
@@ -240,5 +245,5 @@ $env:PATH='C:\ST\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.m
 Last verified size:
 
 ```text
-text=33904, data=92, bss=3652
+text=33972, data=92, bss=3652
 ```

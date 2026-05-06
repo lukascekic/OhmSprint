@@ -15,8 +15,10 @@ void UART_SendMeasurements(const ATM90E26_Meas *m,
                            uint32_t uptimeSec)
 {
     MeasureData msg = MeasureData_init_zero;
+    uint8_t header[4];
     uint8_t payload[MeasureData_size];
     pb_ostream_t stream = pb_ostream_from_buffer(payload, sizeof(payload));
+    uint32_t len;
 
     (void)totalExport;
     (void)uptimeSec;
@@ -28,14 +30,23 @@ void UART_SendMeasurements(const ATM90E26_Meas *m,
     msg.voltage = (float)m->voltage / 100.0f;
     msg.power = (float)m->activePower;
     msg.frequency = (float)m->frequency / 100.0f;
-    msg.power_usage = (float)totalImport * 0.1f;
+    msg.power_usage = (float)totalImport * 0.0001f;
     msg.sd_logs_enable = true;
     msg.wifi_enable = true;
 
     if (!pb_encode(&stream, MeasureData_fields, &msg))
         return;
 
-    (void)HAL_UART_Transmit(uart_handle, payload, (uint16_t)stream.bytes_written, 100U);
+    len = (uint32_t)stream.bytes_written;
+    header[0] = (uint8_t)((len >> 24) & 0xFFU);
+    header[1] = (uint8_t)((len >> 16) & 0xFFU);
+    header[2] = (uint8_t)((len >> 8) & 0xFFU);
+    header[3] = (uint8_t)(len & 0xFFU);
+
+    if (HAL_UART_Transmit(uart_handle, header, (uint16_t)sizeof(header), 100U) != HAL_OK)
+        return;
+
+    (void)HAL_UART_Transmit(uart_handle, payload, (uint16_t)len, 100U);
 }
 
 void UART_SendEvent(const char *evType, const char *payload)
