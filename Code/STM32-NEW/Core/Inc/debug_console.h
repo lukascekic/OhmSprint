@@ -18,6 +18,7 @@ void DebugConsole_LogMeasurement(const ATM90E26_Meas *m,
 void DebugConsole_LogBoardState(const BoardControlSnapshot *snapshot,
                                 uint8_t senseResetPulsed);
 void DebugConsole_LogEspState(const EspControlSnapshot *snapshot);
+void DebugConsole_LogUartTx(uint32_t bytes);
 void DebugConsole_LogAdvancedIo(uint32_t uptimeSec,
                                 uint32_t zxTotal,
                                 uint32_t irqTotal,

@@ -282,11 +282,14 @@ int main(void)
     /* USER CODE BEGIN 3 */
     uint32_t now = HAL_GetTick();
 
+    EspControl_Task();
     AdvancedIo_Task(now);
 
     if ((now - lastMeasTick) >= MEASUREMENT_PERIOD_MS)
     {
       lastMeasTick += MEASUREMENT_PERIOD_MS;
+      espSnapshot = EspControl_GetSnapshot();
+      DebugConsole_LogEspState(&espSnapshot);
       AdvancedIo_Log(now / 1000U);
 
       if (atm_dev.initialized != 0U)
