@@ -61,6 +61,18 @@ static ATM90E26_Dev atm_dev;
 static ATM90E26_Meas meas;
 static uint32_t lastMeasTick = 0U;
 static uint8_t senseResetPulsed = 0U;
+static volatile uint32_t zxEdgeCount = 0U;
+static volatile uint32_t irqEdgeCount = 0U;
+static volatile uint32_t warnEdgeCount = 0U;
+static volatile uint32_t cf1PulseCount = 0U;
+static volatile uint32_t cf2PulseCount = 0U;
+static volatile uint8_t alertPulsePending = 0U;
+static uint32_t prevZxEdgeCount = 0U;
+static uint32_t prevIrqEdgeCount = 0U;
+static uint32_t prevWarnEdgeCount = 0U;
+static uint32_t prevCf1PulseCount = 0U;
+static uint32_t prevCf2PulseCount = 0U;
+static uint32_t buzzerOffTick = 0U;
 
 /* USER CODE END PV */
 
@@ -88,6 +100,71 @@ static void ShowAtmError(const char *title, const char *phase, ATM90E26_Status s
   snprintf(err, sizeof(err), "ERR:%d SYS:%04X", status, atm_dev.lastSysStatus);
   Display_Error(title, err);
   DebugConsole_LogAtmError(phase, status, atm_dev.lastSysStatus);
+}
+
+static HAL_StatusTypeDef AdvancedIo_Init(void)
+{
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0U);
+
+  HAL_NVIC_SetPriority(TIM2_IRQn, 5U, 0U);
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+  if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1) != HAL_OK)
+    return HAL_ERROR;
+  if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3) != HAL_OK)
+    return HAL_ERROR;
+  if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4) != HAL_OK)
+    return HAL_ERROR;
+
+  return HAL_OK;
+}
+
+static void Buzzer_StartPulse(uint32_t now, uint32_t durationMs)
+{
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 500U);
+  buzzerOffTick = now + durationMs;
+}
+
+static void AdvancedIo_Task(uint32_t now)
+{
+  if (alertPulsePending != 0U)
+  {
+    alertPulsePending = 0U;
+    Buzzer_StartPulse(now, 120U);
+  }
+
+  if ((buzzerOffTick != 0U) && ((int32_t)(now - buzzerOffTick) >= 0))
+  {
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0U);
+    buzzerOffTick = 0U;
+  }
+}
+
+static void AdvancedIo_Log(uint32_t uptimeSec)
+{
+  uint32_t zx = zxEdgeCount;
+  uint32_t irq = irqEdgeCount;
+  uint32_t warn = warnEdgeCount;
+  uint32_t cf1 = cf1PulseCount;
+  uint32_t cf2 = cf2PulseCount;
+
+  DebugConsole_LogAdvancedIo(uptimeSec,
+                             zx,
+                             irq,
+                             warn,
+                             cf1,
+                             cf2,
+                             zx - prevZxEdgeCount,
+                             irq - prevIrqEdgeCount,
+                             warn - prevWarnEdgeCount,
+                             cf1 - prevCf1PulseCount,
+                             cf2 - prevCf2PulseCount);
+
+  prevZxEdgeCount = zx;
+  prevIrqEdgeCount = irq;
+  prevWarnEdgeCount = warn;
+  prevCf1PulseCount = cf1;
+  prevCf2PulseCount = cf2;
 }
 
 /* USER CODE END 0 */
@@ -136,7 +213,7 @@ int main(void)
   ATM90E26_PrepareHardware();
 
   DebugConsole_Init(&huart1);
-  DebugConsole_Log("BOOT,stm32-new iter4-hw-pinout-integrated\r\n");
+  DebugConsole_Log("BOOT,stm32-new iter5-advanced-io\r\n");
   boardSnapshot = BoardControl_GetSnapshot();
   DebugConsole_LogBoardState(&boardSnapshot, senseResetPulsed);
   espSnapshot = EspControl_GetSnapshot();
@@ -150,6 +227,15 @@ int main(void)
   else
   {
     DebugConsole_Log("OLED,init,err=i2c_no_ack\r\n");
+  }
+
+  if (AdvancedIo_Init() == HAL_OK)
+  {
+    DebugConsole_Log("IO,init,ok\r\n");
+  }
+  else
+  {
+    DebugConsole_Log("IO,init,err=tim2_start\r\n");
   }
 
   atm_dev.hspi = &hspi1;
@@ -196,9 +282,12 @@ int main(void)
     /* USER CODE BEGIN 3 */
     uint32_t now = HAL_GetTick();
 
+    AdvancedIo_Task(now);
+
     if ((now - lastMeasTick) >= MEASUREMENT_PERIOD_MS)
     {
       lastMeasTick += MEASUREMENT_PERIOD_MS;
+      AdvancedIo_Log(now / 1000U);
 
       if (atm_dev.initialized != 0U)
       {
@@ -266,6 +355,39 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == ZX_Pin)
+  {
+    zxEdgeCount++;
+  }
+  else if (GPIO_Pin == IRQ_Pin)
+  {
+    irqEdgeCount++;
+    alertPulsePending = 1U;
+  }
+  else if (GPIO_Pin == WARN_OUT_Pin)
+  {
+    warnEdgeCount++;
+    alertPulsePending = 1U;
+  }
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance != TIM2)
+    return;
+
+  if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
+  {
+    cf2PulseCount++;
+  }
+  else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4)
+  {
+    cf1PulseCount++;
+  }
+}
 
 /* USER CODE END 4 */
 

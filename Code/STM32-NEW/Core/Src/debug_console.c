@@ -123,3 +123,33 @@ void DebugConsole_LogEspState(const EspControlSnapshot *snapshot)
     if ((len > 0) && (len < (int)sizeof(debug_buf)))
         debug_write(debug_buf);
 }
+
+void DebugConsole_LogAdvancedIo(uint32_t uptimeSec,
+                                uint32_t zxTotal,
+                                uint32_t irqTotal,
+                                uint32_t warnTotal,
+                                uint32_t cf1Total,
+                                uint32_t cf2Total,
+                                uint32_t zxDelta,
+                                uint32_t irqDelta,
+                                uint32_t warnDelta,
+                                uint32_t cf1Delta,
+                                uint32_t cf2Delta)
+{
+    int len = snprintf(debug_buf, sizeof(debug_buf),
+                       "IO,t=%lu,zx=%lu,irq=%lu,warn=%lu,cf1=%lu,cf2=%lu,dzx=%lu,dirq=%lu,dwarn=%lu,dcf1=%lu,dcf2=%lu\r\n",
+                       (unsigned long)uptimeSec,
+                       (unsigned long)zxTotal,
+                       (unsigned long)irqTotal,
+                       (unsigned long)warnTotal,
+                       (unsigned long)cf1Total,
+                       (unsigned long)cf2Total,
+                       (unsigned long)zxDelta,
+                       (unsigned long)irqDelta,
+                       (unsigned long)warnDelta,
+                       (unsigned long)cf1Delta,
+                       (unsigned long)cf2Delta);
+
+    if ((len > 0) && (len < (int)sizeof(debug_buf)))
+        debug_write(debug_buf);
+}

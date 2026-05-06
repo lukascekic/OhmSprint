@@ -77,10 +77,13 @@ void Error_Handler(void);
 #define ATM_CS_GPIO_Port GPIOA
 #define ZX_Pin GPIO_PIN_0
 #define ZX_GPIO_Port GPIOB
+#define ZX_EXTI_IRQn EXTI0_IRQn
 #define IRQ_Pin GPIO_PIN_1
 #define IRQ_GPIO_Port GPIOB
+#define IRQ_EXTI_IRQn EXTI1_IRQn
 #define WARN_OUT_Pin GPIO_PIN_2
 #define WARN_OUT_GPIO_Port GPIOB
+#define WARN_OUT_EXTI_IRQn EXTI2_IRQn
 #define CF2_Pin GPIO_PIN_10
 #define CF2_GPIO_Port GPIOB
 #define CF1_Pin GPIO_PIN_11
