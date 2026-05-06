@@ -252,6 +252,27 @@ esp_err_t handleMeasurements(PsychicRequest *request,
   return response->send(200, "application/json", json.c_str());
 }
 
+esp_err_t handleSDFiles(PsychicRequest *request, PsychicResponse *response) {
+  JsonDocument doc;
+
+  if (!sdCard.isInitialized()) {
+    doc["error"] = "SD card not initialized";
+    String json;
+    serializeJson(doc, json);
+    return response->send(503, "application/json", json.c_str());
+  }
+
+  std::vector<String> files = sdCard.listFiles();
+  JsonArray arr = doc["files"].to<JsonArray>();
+  for (const auto &f : files) {
+    arr.add(f);
+  }
+
+  String json;
+  serializeJson(doc, json);
+  return response->send(200, "application/json", json.c_str());
+}
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -283,6 +304,7 @@ void setup() {
   server.on("/configure", HTTP_POST, handleConfigure);
   server.on("/status", HTTP_GET, handleStatus);
   server.on("/api/measurements", HTTP_GET, handleMeasurements);
+  server.on("/api/sd/files", HTTP_GET, handleSDFiles);
 
   // WebSocket endpoint
   wsHandler = new PsychicWebSocketHandler();

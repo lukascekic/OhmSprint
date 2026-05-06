@@ -100,3 +100,27 @@ void SDCardManager::logEntry(uint32_t timestamp, const MeasureData &data) {
   file.println(line);
   file.close();
 }
+
+std::vector<String> SDCardManager::listFiles() {
+  std::vector<String> files;
+  if (!initialized) {
+    return files;
+  }
+
+  File root = SD.open("/");
+  if (!root || !root.isDirectory()) {
+    return files;
+  }
+
+  String name;
+  while ((name = root.getNextFileName()) != "") {
+    File f = SD.open(name.c_str());
+    if (f && !f.isDirectory()) {
+      files.push_back(name);
+    }
+    f.close();
+  }
+  root.close();
+
+  return files;
+}

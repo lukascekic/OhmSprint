@@ -3,7 +3,7 @@
 ESP_PORT ?= /dev/ttyACM0
 SIM_PORT ?= /dev/ttyUSB0
 
-all: build
+all: upload-all monitor
 
 build:
 	pio run

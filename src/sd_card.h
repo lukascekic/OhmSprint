@@ -6,12 +6,14 @@
 #include <SD.h>
 #include <SPI.h>
 #include <simple.pb.h>
+#include <vector>
 
 class SDCardManager {
 public:
   bool begin();
   void logEntry(uint32_t timestamp, const MeasureData &data);
   bool isInitialized() const { return initialized; }
+  std::vector<String> listFiles();
 
 private:
   bool initialized = false;

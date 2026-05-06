@@ -3,6 +3,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 import DashboardHeader from '../components/DashboardHeader.astro';
 import MetricCard from '../components/MetricCard.astro';
 import ChartCard from '../components/ChartCard.astro';
+import SdFiles from '../components/SdFiles.astro';
 ---
 
 <MainLayout title="Sensor Dashboard">
@@ -21,6 +22,7 @@ import ChartCard from '../components/ChartCard.astro';
         <ChartCard title="Current" canvasId="chart-current" />
         <ChartCard title="Power" canvasId="chart-power" />
         <ChartCard title="Frequency" canvasId="chart-frequency" />
+        <SdFiles />
     </div>
 </MainLayout>
 
