@@ -7,7 +7,7 @@ void BoardControl_ApplyBringupDefaults(void)
 {
     HAL_GPIO_WritePin(ATM_CS_GPIO_Port, ATM_CS_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SENSE_RST_GPIO_Port, SENSE_RST_Pin, GPIO_PIN_SET);
-    EspControl_InitSafeDefaults();
+    EspControl_Init();
 }
 
 void BoardControl_ResetSensing(void)

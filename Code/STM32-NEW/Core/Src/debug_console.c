@@ -112,13 +112,25 @@ void DebugConsole_LogEspState(const EspControlSnapshot *snapshot)
         return;
 
     len = snprintf(debug_buf, sizeof(debug_buf),
-                   "ESP,en=%u,boot=%s,mux=%s,dtr=%u,rts=%u,dbg=%u\r\n",
+                   "ESP,en=%u,boot=%s,mux=%s,run=%s,flash_pt=%u,dtr=%u,rts=%u,dbg=%u\r\n",
                    snapshot->enabled,
                    EspControl_BootModeLabel(snapshot->bootMode),
                    EspControl_MuxRouteLabel(snapshot->muxRoute),
+                   EspControl_RunModeLabel(snapshot->runMode),
+                   snapshot->flashPassthroughActive,
                    (snapshot->dtr == GPIO_PIN_SET) ? 1U : 0U,
                    (snapshot->rts == GPIO_PIN_SET) ? 1U : 0U,
                    (snapshot->bootDebugSwitch == GPIO_PIN_SET) ? 1U : 0U);
+
+    if ((len > 0) && (len < (int)sizeof(debug_buf)))
+        debug_write(debug_buf);
+}
+
+void DebugConsole_LogUartTx(uint32_t bytes)
+{
+    int len = snprintf(debug_buf, sizeof(debug_buf),
+                       "TX2,n=%lu\r\n",
+                       (unsigned long)bytes);
 
     if ((len > 0) && (len < (int)sizeof(debug_buf)))
         debug_write(debug_buf);

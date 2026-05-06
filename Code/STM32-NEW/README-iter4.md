@@ -14,6 +14,8 @@ signals to isolate failures quickly.
 - I2C1 OLED support with an ACK canary during display init.
 - USART1 debug console for PC-side bring-up logs.
 - USART2 length-prefixed nanopb `MeasureData` transmit path toward ESP32.
+- ESP32 normal app boot is enabled by default; `BOOT_DEBUG` controls whether
+  USB-UART is routed toward STM32 debug or ESP32 flashing.
 - TIM2 generated and configured for future buzzer/CF work, but not started at
   runtime in this branch.
 - ATM90E26 initialization, register writes, checksum verification, periodic
@@ -25,14 +27,15 @@ signals to isolate failures quickly.
 
 - No extra binary ESP32 framing with magic bytes and CRC16 around the protobuf
   payload.
-- No ESP32 command/control state machine.
+- No ESP32 ready/ack/error protocol.
+- No magic/CRC UART recovery framing.
 - No runtime EXTI handling for `ZX`, `IRQ`, or `WARN_OUT`.
 - No CF pulse accumulation from `CF1` / `CF2`.
 - No buzzer runtime behavior.
 - No persistent energy resume after STM32 reset.
 
-The advanced interrupt, pulse, buzzer, and full ESP32 command/control work
-belongs in the next branch.
+The advanced interrupt, pulse, buzzer, and full ESP32 status/command protocol
+work belongs in the next branch.
 
 ## Project Structure
 
@@ -75,8 +78,9 @@ belongs in the next branch.
   iteration because the current ESP32 test code expects exactly this format.
 
 - `Core/Src/esp_control.c`, `Core/Inc/esp_control.h`  
-  ESP-related GPIO defaults and state labels. This branch logs ESP control
-  state but does not implement full ESP orchestration.
+  ESP-related GPIO defaults and state labels. This branch keeps ESP enabled in
+  normal app mode, routes USB-UART according to `BOOT_DEBUG`, and passes DTR/RTS
+  through to `ESP_BOOT` / `ESP_EN` when USB-UART is routed to ESP32 for flashing.
 
 - `Core/Src/tim.c`, `Core/Inc/tim.h`  
   CubeMX-generated TIM2 setup for future advanced I/O. The timer is initialized
@@ -106,7 +110,7 @@ At boot, a healthy path should look roughly like:
 ```text
 BOOT,stm32-new iter4-hw-pinout-integrated
 BOARD,pwr=...,usbc_pg=...,vbat_pg=...,boot_dbg=...,sense_rst=1,rst_pulse=1
-ESP,en=...,boot=...,mux=...,dtr=...,rts=...,dbg=...
+ESP,en=...,boot=...,mux=...,run=...,flash_pt=...,dtr=...,rts=...,dbg=...
 OLED,init,ok
 CAL,ugain=0x6720,igainL=0x7A13
 ATM,init,try
@@ -156,6 +160,7 @@ Notes:
 - The payload has a 4-byte big-endian length prefix so the current ESP32 parser
   can find message boundaries.
 - There is still no magic byte and no CRC.
+- A successful USART2 send is logged on USART1 as `TX2,n=...`.
 - Field scaling sent by STM32:
   - `voltage`: volts
   - `current`: amperes from line current
@@ -200,6 +205,7 @@ Use USART1 as the primary bring-up truth source.
 
 6. Confirm ESP32 UART receive path.
    - Expected on ESP side: decoded `MeasureData` payloads from STM32 USART2.
+   - Expected on STM USART1 after each send: `TX2,n=...`.
    - If USART1 measurements exist but ESP sees nothing: focus on USART2 pins,
      baud rate, mux route, ESP RX configuration, and ground/common power.
    - If ESP receives bytes but decode fails: first confirm that the ESP parser
@@ -219,7 +225,8 @@ Use USART1 as the primary bring-up truth source.
 ## Important Implementation Notes
 
 - `ZX`, `IRQ`, and `WARN_OUT` are plain GPIO inputs in iter4. They are labelled
-  for future work but intentionally do not generate interrupts here.
+  for future work but intentionally do not generate interrupts here. Internal
+  pull-ups are enabled as a bring-up guard against floating open-drain outputs.
 - `CF1` and `CF2` are configured through TIM2 pin setup for later work. The
   firmware does not start input capture in iter4.
 - `S_MEAN` / apparent power is stored as unsigned `uint16_t`.
@@ -245,5 +252,5 @@ $env:PATH='C:\ST\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.m
 Last verified size:
 
 ```text
-text=33972, data=92, bss=3652
+text=34672, data=92, bss=3660
 ```
