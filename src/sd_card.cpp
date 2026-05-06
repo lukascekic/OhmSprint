@@ -1,4 +1,5 @@
 #include "sd_card.h"
+#include "HWCDC.h"
 
 #ifndef SD_MOSI_PIN
 #define SD_MOSI_PIN 1
@@ -60,13 +61,14 @@ bool SDCardManager::createNewFile() {
 }
 
 String SDCardManager::generateFilename() {
-  char filename[MAX_FILENAME_LEN];
-  time_t now = time(nullptr);
-  struct tm timeinfo;
-  localtime_r(&now, &timeinfo);
-  strftime(filename, MAX_FILENAME_LEN, "/measurement_%Y%m%d_%H%M%S.csv",
-           &timeinfo);
-  return String(filename);
+  for (uint16_t i = 1; i <= 999; i++) {
+    char filename[MAX_FILENAME_LEN];
+    snprintf(filename, MAX_FILENAME_LEN, "/measurement_%03u.csv", i);
+    if (!SD.exists(filename)) {
+      return String(filename);
+    }
+  }
+  return String("/measurement_999.csv");
 }
 
 bool SDCardManager::hasSpace() {
