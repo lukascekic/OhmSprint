@@ -13,7 +13,7 @@ signals to isolate failures quickly.
   bring-up speed.
 - I2C1 OLED support with an ACK canary during display init.
 - USART1 debug console for PC-side bring-up logs.
-- USART2 minimal measurement transmit path toward ESP32.
+- USART2 raw nanopb `MeasureData` transmit path toward ESP32.
 - TIM2 generated and configured for future buzzer/CF work, but not started at
   runtime in this branch.
 - ATM90E26 initialization, register writes, checksum verification, periodic
@@ -23,16 +23,15 @@ signals to isolate failures quickly.
 
 ## What This Iteration Does Not Contain
 
-- No nanopb encoding.
-- No final binary ESP32 framing with magic bytes, length, protobuf payload, and
-  CRC16.
+- No extra binary ESP32 framing with magic bytes, length, and CRC16 around the
+  protobuf payload.
 - No ESP32 command/control state machine.
 - No runtime EXTI handling for `ZX`, `IRQ`, or `WARN_OUT`.
 - No CF pulse accumulation from `CF1` / `CF2`.
 - No buzzer runtime behavior.
 - No persistent energy resume after STM32 reset.
 
-The advanced interrupt, pulse, buzzer, nanopb, and full ESP32 integration work
+The advanced interrupt, pulse, buzzer, and full ESP32 command/control work
 belongs in the next branch.
 
 ## Project Structure
@@ -61,9 +60,19 @@ belongs in the next branch.
   OLED display layer. `Display_Init()` returns a status so I2C/OLED failure is
   visible in USART1 logs instead of silently producing a black screen.
 
+- `Core/Proto/measure.proto`, `Core/Src/measure.pb.c`,
+  `Core/Inc/measure.pb.h`  
+  Shared `MeasureData` schema and generated nanopb encoder metadata for the
+  STM32-to-ESP32 measurement payload.
+
+- `Core/Src/pb_encode.c`, `Core/Src/pb_common.c`,
+  `Core/Inc/pb*.h`  
+  Minimal nanopb runtime files needed for encoding on STM32.
+
 - `Core/Src/uart_protocol.c`, `Core/Inc/uart_protocol.h`  
-  Minimal USART2 text-frame sender for ESP32 RX debug. This is intentionally
-  not the final nanopb protocol.
+  USART2 sender for raw nanopb `MeasureData` payloads. There is intentionally
+  no magic byte, length prefix, or CRC in this iteration because the current
+  ESP32 test code expects only the protobuf message bytes.
 
 - `Core/Src/esp_control.c`, `Core/Inc/esp_control.h`  
   ESP-related GPIO defaults and state labels. This branch logs ESP control
@@ -117,25 +126,42 @@ If the MCU reaches a HardFault, USART1 should emit:
 HF
 ```
 
-## USART2 ESP32 Debug Frame
+## USART2 ESP32 Measurement Payload
 
-This branch sends a simple text frame to ESP32 once per successful measurement:
+This branch sends one raw nanopb-encoded `MeasureData` payload to ESP32 once
+per successful measurement. The schema is:
 
-```text
-$M,seq=0,t=12,v=23005,i=4523,in=0,p=1042,q=120,s=1050,f=4998,pf=988,ei=120,ee=0*CS
+```proto
+syntax = "proto3";
+
+message MeasureData {
+    float current = 1;
+    float voltage = 2;
+    float power = 3;
+    float frequency = 4;
+    float power_usage = 5;
+    bool sd_logs_enable = 6;
+    bool wifi_enable = 7;
+}
 ```
 
 Notes:
 
-- `CS` is a simple XOR checksum over the payload between `$` and `*`.
-- Raw scaling follows the ATM90E26 driver comments:
-  - `v`: raw voltage, `/100 = V`
-  - `i`, `in`: raw current, `/1000 = A`
-  - `f`: raw frequency, `/100 = Hz`
-  - `pf`: signed, `/1000`
-  - `ei`, `ee`: accumulated import/export energy in `0.1 Wh`
-- This is only an integration/debug aid for USART2 RX. It is not the final
-  mobile/ESP protocol.
+- The payload is not framed in iter4: no magic byte, no length prefix, no CRC.
+- ESP32 must know where one UART message ends. For this temporary test format,
+  that usually means reading by expected packet size, UART idle timeout, or the
+  current parser behavior already implemented by the ESP32 developer.
+- Field scaling sent by STM32:
+  - `voltage`: volts
+  - `current`: amperes from line current
+  - `power`: active power in watts
+  - `frequency`: hertz
+  - `power_usage`: accumulated import energy since STM32 boot, in Wh
+  - `sd_logs_enable`: currently always `true`
+  - `wifi_enable`: currently always `true`
+- This is the ESP-compatible protobuf payload, but not the final robust UART
+  transport. Magic/length/CRC framing can be added after basic STM32-ESP32
+  communication is confirmed.
 
 ## Test-Day Debug Checklist
 
@@ -168,9 +194,11 @@ Use USART1 as the primary bring-up truth source.
      input path, and `IgainL`.
 
 6. Confirm ESP32 UART receive path.
-   - Expected on ESP side: `$M,...*CS` frames from STM32 USART2.
+   - Expected on ESP side: decoded `MeasureData` payloads from STM32 USART2.
    - If USART1 measurements exist but ESP sees nothing: focus on USART2 pins,
      baud rate, mux route, ESP RX configuration, and ground/common power.
+   - If ESP receives bytes but decode fails: first confirm that the ESP parser
+     expects raw protobuf bytes with no magic/length/CRC wrapper.
 
 ## Failure Map
 
@@ -195,6 +223,8 @@ Use USART1 as the primary bring-up truth source.
   - `IgainL = 0x7A13`
 - Total energy is accumulated in STM32 RAM only in this branch, so it resets on
   MCU reset.
+- USART2 uses nanopb encoding, but not robust transport framing. This is a
+  deliberate temporary compatibility choice for the current ESP32 test code.
 
 ## Build
 
@@ -210,5 +240,5 @@ $env:PATH='C:\ST\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.m
 Last verified size:
 
 ```text
-text=26756, data=92, bss=3652
+text=33904, data=92, bss=3652
 ```
