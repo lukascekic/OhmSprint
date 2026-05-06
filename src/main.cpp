@@ -1,4 +1,5 @@
 #include "HardwareSerial.h"
+#include "PsychicFileResponse.h"
 #include "PsychicHandler.h"
 #include "PsychicResponse.h"
 #include "PsychicWebSocket.h"
@@ -118,7 +119,6 @@ esp_err_t serveStaticFile(const char *path, PsychicResponse *response) {
 
   String filePath = path;
 
-  // Normalize: remove trailing slash (except for root)
   if (filePath != "/" && filePath.endsWith("/")) {
     filePath.remove(filePath.length() - 1);
   }
@@ -128,47 +128,21 @@ esp_err_t serveStaticFile(const char *path, PsychicResponse *response) {
   }
 
   File file = LittleFS.open(filePath, "r");
-
-  if (file.isDirectory()) {
-    String indexFilePath = filePath + "/index.html";
-    file = LittleFS.open(indexFilePath, "r");
-    if (file) {
-      filePath = indexFilePath;
-    }
-  }
-
   if (!file) {
     return response->send(404, "text/plain", "File not found");
   }
-
-  String contentType = "text/plain";
-  if (filePath.endsWith(".html"))
-    contentType = "text/html";
-  else if (filePath.endsWith(".css"))
-    contentType = "text/css";
-  else if (filePath.endsWith(".js"))
-    contentType = "application/javascript";
-  else if (filePath.endsWith(".svg"))
-    contentType = "image/svg+xml";
-  else if (filePath.endsWith(".png"))
-    contentType = "image/png";
-  else if (filePath.endsWith(".ico"))
-    contentType = "image/x-icon";
-
-  size_t size = file.size();
-  uint8_t *buffer = (uint8_t *)malloc(size);
-  if (!buffer) {
+  if (file.isDirectory()) {
     file.close();
-    return response->send(500, "text/plain", "Memory allocation failed");
+    filePath = filePath + "/index.html";
+    file = LittleFS.open(filePath, "r");
+    if (!file) {
+      return response->send(404, "text/plain", "File not found");
+    }
   }
-
-  file.read(buffer, size);
   file.close();
 
-  response->setContentType(contentType.c_str());
-  esp_err_t err = response->send(200, contentType.c_str(), buffer, size);
-  free(buffer);
-  return err;
+  PsychicFileResponse fileResponse(response, LittleFS, filePath);
+  return fileResponse.send();
 }
 
 esp_err_t handleRoot(PsychicRequest *request, PsychicResponse *response) {
