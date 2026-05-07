@@ -102,6 +102,7 @@ Map<String, dynamic> _measurementPayload() {
     'p': 920.0,
     'f': 50.0,
     'pf': 0.99,
+    'ei': 1.2,
     't': 12345,
   };
 }

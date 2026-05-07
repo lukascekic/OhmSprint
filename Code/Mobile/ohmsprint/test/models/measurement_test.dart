@@ -77,15 +77,16 @@ void main() {
         'i': 4.0,
         'p': 920.0,
         'f': 50.0,
-        'pf': 0.99,
+        'ei': 1.2,
         't': 1234567890,
       };
 
       final measurement = Measurement.fromJson(json);
 
       expect(measurement.voltage, 230.0);
+      expect(measurement.powerFactor, 1.0);
       expect(measurement.reactivePower, 0.0);
-      expect(measurement.importEnergy, 0.0);
+      expect(measurement.importEnergy, 1.2);
     });
 
     test('maps legacy "e" field to importEnergy', () {
@@ -130,7 +131,7 @@ void main() {
         'i': 4.0,
         'p': 920.0,
         'f': 50.0,
-        'pf': 0.99,
+        'ei': 1.2,
         't': 1234567890,
       };
 
@@ -146,6 +147,27 @@ void main() {
       );
     });
 
+    test('throws descriptive error when energy field is missing', () {
+      final json = {
+        'v': 230.0,
+        'i': 4.0,
+        'p': 920.0,
+        'f': 50.0,
+        't': 1234567890,
+      };
+
+      expect(
+        () => Measurement.fromJson(json),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('ei'),
+          ),
+        ),
+      );
+    });
+
     test('returns values by metric type', () {
       final measurement = Measurement.fromJson({
         'v': 230.0,
@@ -155,7 +177,6 @@ void main() {
         'q': 12.0,
         's': 921.0,
         'f': 50.0,
-        'pf': 0.99,
         'ei': 12.5,
         'ee': 0.1,
         't': 1234567890,

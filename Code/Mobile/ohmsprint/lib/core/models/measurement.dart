@@ -38,6 +38,11 @@ class Measurement {
         (voltage * current).abs();
     final powerFactor = _optionalNumber(json, 'pf')?.toDouble() ??
         _derivePowerFactor(activePower, apparentPower);
+    final importEnergy = _requireNumber(
+      json,
+      'ei',
+      aliases: ['e', 'power_usage'],
+    ).toDouble();
 
     return Measurement(
       voltage: voltage,
@@ -51,10 +56,7 @@ class Measurement {
       reactivePower: _optionalNumber(json, 'q')?.toDouble() ??
           _deriveReactivePower(activePower, apparentPower),
       apparentPower: apparentPower,
-      importEnergy: (json['ei'] as num?)?.toDouble() ??
-          (json['e'] as num?)?.toDouble() ??
-          (json['power_usage'] as num?)?.toDouble() ??
-          0,
+      importEnergy: importEnergy,
       exportEnergy: (json['ee'] as num?)?.toDouble() ?? 0,
     );
   }
