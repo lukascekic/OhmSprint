@@ -18,6 +18,8 @@ static EspBootMode esp_boot_mode = ESP_BOOTMODE_APP;
 static EspMuxRoute esp_mux_route = ESP_MUX_ROUTE_STM;
 static EspRunMode esp_run_mode = ESP_RUNMODE_NORMAL;
 static uint8_t flash_passthrough_active;
+static uint8_t esp_enabled_written;
+static uint8_t esp_boot_mode_written;
 static GPIO_PinState last_boot_debug = BOOT_DEBUG_USB_STM_LEVEL;
 static GPIO_PinState stable_boot_debug = BOOT_DEBUG_USB_STM_LEVEL;
 static uint32_t boot_debug_changed_tick;
@@ -64,7 +66,13 @@ static void apply_boot_debug_route(GPIO_PinState bootDebug)
 
 void EspControl_SetEnabled(uint8_t enabled)
 {
-    esp_enabled = (enabled != 0U) ? 1U : 0U;
+    uint8_t requested = (enabled != 0U) ? 1U : 0U;
+
+    if ((esp_enabled_written != 0U) && (requested == esp_enabled))
+        return;
+
+    esp_enabled = requested;
+    esp_enabled_written = 1U;
     HAL_GPIO_WritePin(ESP_EN_GPIO_Port,
                       ESP_EN_Pin,
                       esp_enabled ? ESP_EN_ENABLED_LEVEL : ESP_EN_DISABLED_LEVEL);
@@ -72,7 +80,11 @@ void EspControl_SetEnabled(uint8_t enabled)
 
 void EspControl_SetBootMode(EspBootMode mode)
 {
+    if ((esp_boot_mode_written != 0U) && (mode == esp_boot_mode))
+        return;
+
     esp_boot_mode = mode;
+    esp_boot_mode_written = 1U;
 
     /* ESP boot strap defaults to app mode when BOOT stays high. */
     HAL_GPIO_WritePin(ESP_BOOT_GPIO_Port,
