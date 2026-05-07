@@ -1,0 +1,13 @@
+# Local planning/reference notes
+docs/
+
+# STM32CubeIDE build output
+Code/STM32-NEW/Debug/
+
+# Mobile app local logs
+Code/Mobile/ohmsprint/*.log
+Code/Mobile/ohmsprint/*_log.txt
+
+# Local assistant/tooling scratch space
+.claude/
+.codex-tmp/
