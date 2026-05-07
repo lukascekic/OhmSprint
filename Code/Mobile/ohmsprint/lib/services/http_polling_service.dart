@@ -9,11 +9,13 @@ class HttpPollingService {
     this.baseUrl, {
     http.Client? client,
     this.maxConsecutiveFailures = 5,
+    this.endpointPaths = const ['/api/readings', '/api/measurements'],
   }) : _client = client ?? http.Client();
 
   final String baseUrl;
   final http.Client _client;
   final int maxConsecutiveFailures;
+  final List<String> endpointPaths;
   final StreamController<Map<String, dynamic>> _controller =
       StreamController<Map<String, dynamic>>.broadcast();
 
@@ -41,31 +43,41 @@ class HttpPollingService {
   }
 
   Future<void> _pollOnce() async {
-    try {
-      final response = await _client
-          .get(Uri.parse('$baseUrl/api/readings'))
-          .timeout(const Duration(seconds: 3));
-      if (response.statusCode != 200) {
-        _registerFailure(
-          'HTTP polling returned status ${response.statusCode}.',
-        );
-        return;
-      }
+    Object? lastError;
 
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
+    for (final endpointPath in endpointPaths) {
+      try {
+        final payload = await _pollEndpoint(endpointPath);
         _consecutiveFailures = 0;
-        _controller.add(decoded);
-      } else if (decoded is Map) {
-        _consecutiveFailures = 0;
-        _controller.add(Map<String, dynamic>.from(decoded));
-      } else {
-        _registerFailure('HTTP polling returned a non-object payload.');
+        _controller.add(payload);
+        return;
+      } catch (error) {
+        lastError = error;
       }
-    } catch (error) {
-      debugPrint('HTTP poll failed: $error');
-      _registerFailure('HTTP polling failed: $error');
     }
+
+    debugPrint('HTTP poll failed: $lastError');
+    _registerFailure('HTTP polling failed: $lastError');
+  }
+
+  Future<Map<String, dynamic>> _pollEndpoint(String endpointPath) async {
+    final response = await _client
+        .get(Uri.parse('$baseUrl$endpointPath'))
+        .timeout(const Duration(seconds: 3));
+    if (response.statusCode != 200) {
+      throw StateError(
+        'HTTP polling returned status ${response.statusCode}.',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+    throw const FormatException('HTTP polling returned a non-object payload.');
   }
 
   void _registerFailure(String message) {

@@ -104,6 +104,27 @@ void main() {
       expect(measurement.importEnergy, 123.45);
     });
 
+    test('parses firmware measurement payload', () {
+      final beforeParse = DateTime.now().millisecondsSinceEpoch;
+      final measurement = Measurement.fromJson({
+        'voltage': 230.0,
+        'current': 4.0,
+        'power': 874.0,
+        'frequency': 50.0,
+        'power_usage': 1.25,
+        'timestamp': 42,
+      });
+      final afterParse = DateTime.now().millisecondsSinceEpoch;
+
+      expect(measurement.voltage, 230.0);
+      expect(measurement.current, 4.0);
+      expect(measurement.activePower, 874.0);
+      expect(measurement.apparentPower, 920.0);
+      expect(measurement.powerFactor, closeTo(0.95, 0.001));
+      expect(measurement.importEnergy, 1.25);
+      expect(measurement.timestamp, inInclusiveRange(beforeParse, afterParse));
+    });
+
     test('throws descriptive error when required field is missing', () {
       final json = {
         'i': 4.0,
