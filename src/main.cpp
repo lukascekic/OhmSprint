@@ -273,6 +273,36 @@ esp_err_t handleSDFiles(PsychicRequest *request, PsychicResponse *response) {
   return response->send(200, "application/json", json.c_str());
 }
 
+esp_err_t handleSDDownload(PsychicRequest *request, PsychicResponse *response) {
+  if (!sdCard.isInitialized()) {
+    return response->send(503, "text/plain", "SD card not initialized");
+  }
+
+  String url = request->url();
+  String filePath = url.substring(strlen("/api/sd/download"));
+
+  if (filePath.length() == 0 || filePath == "/") {
+    return response->send(400, "text/plain", "No file specified");
+  }
+
+  if (!filePath.startsWith("/")) {
+    filePath = "/" + filePath;
+  }
+
+  File file = SD.open(filePath.c_str(), "r");
+  if (!file) {
+    return response->send(404, "text/plain", "File not found");
+  }
+  if (file.isDirectory()) {
+    file.close();
+    return response->send(400, "text/plain", "Cannot download a directory");
+  }
+  file.close();
+
+  PsychicFileResponse fileResponse(response, SD, filePath, String(), true);
+  return fileResponse.send();
+}
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -305,6 +335,7 @@ void setup() {
   server.on("/status", HTTP_GET, handleStatus);
   server.on("/api/measurements", HTTP_GET, handleMeasurements);
   server.on("/api/sd/files", HTTP_GET, handleSDFiles);
+  server.on("/api/sd/download/*", HTTP_GET, handleSDDownload);
 
   // WebSocket endpoint
   wsHandler = new PsychicWebSocketHandler();

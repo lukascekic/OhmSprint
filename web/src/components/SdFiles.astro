@@ -23,7 +23,10 @@
             if (files.length === 0) {
                 list.innerHTML = '<li class="text-gray-400 italic">No files found</li>';
             } else {
-                list.innerHTML = files.map(f => `<li class="font-mono">${f}</li>`).join('');
+                list.innerHTML = files.map(f => {
+                    const name = f.startsWith('/') ? f.substring(1) : f;
+                    return `<li><a href="/api/sd/download/${name}" download="${name}" class="font-mono text-blue-600 hover:underline">${f}</a></li>`;
+                }).join('');
             }
         } catch {
             list.innerHTML = '<li class="text-red-600">Error fetching files</li>';
