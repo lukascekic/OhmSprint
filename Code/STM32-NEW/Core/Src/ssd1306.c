@@ -6,6 +6,8 @@ static uint8_t framebuf[SSD1306_WIDTH * SSD1306_HEIGHT / 8U];
 static uint8_t cursor_x;
 static uint8_t cursor_y;
 
+#define SSD1306_COLUMN_OFFSET 2U
+
 static const uint8_t font5x7[][5] = {
     {0x00,0x00,0x00,0x00,0x00}, {0x00,0x00,0x5F,0x00,0x00},
     {0x00,0x07,0x00,0x07,0x00}, {0x14,0x7F,0x14,0x7F,0x14},
@@ -157,21 +159,17 @@ void SSD1306_WriteString(const char *str)
 
 void SSD1306_Update(void)
 {
-    uint16_t i;
+    uint8_t page;
 
-    ssd1306_cmd(0x21); ssd1306_cmd(0x00); ssd1306_cmd(127U);
-    ssd1306_cmd(0x22); ssd1306_cmd(0x00); ssd1306_cmd(7U);
-
-    for (i = 0U; i < sizeof(framebuf); i += 128U)
+    for (page = 0U; page < 8U; page++)
     {
         uint8_t buf[129];
-        uint16_t chunk = (uint16_t)(sizeof(framebuf) - i);
 
-        if (chunk > 128U)
-            chunk = 128U;
-
+        ssd1306_cmd((uint8_t)(0xB0U + page));
+        ssd1306_cmd((uint8_t)(0x00U | (SSD1306_COLUMN_OFFSET & 0x0FU)));
+        ssd1306_cmd((uint8_t)(0x10U | ((SSD1306_COLUMN_OFFSET >> 4U) & 0x0FU)));
         buf[0] = 0x40U;
-        memcpy(&buf[1], &framebuf[i], chunk);
-        HAL_I2C_Master_Transmit(i2c, SSD1306_ADDR, buf, chunk + 1U, 50U);
+        memcpy(&buf[1], &framebuf[(uint16_t)page * SSD1306_WIDTH], SSD1306_WIDTH);
+        HAL_I2C_Master_Transmit(i2c, SSD1306_ADDR, buf, SSD1306_WIDTH + 1U, 50U);
     }
 }
