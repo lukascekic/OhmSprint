@@ -13,6 +13,11 @@
 #define USB_RTS_ACTIVE_LEVEL GPIO_PIN_RESET
 #define BOOT_DEBUG_DEBOUNCE_MS 30U
 
+/* Status indicator LEDs on PB3 (MUX_STATUS), PB4 (ESP_MODE0), PB5 (ESP_MODE1).
+ * Hardware: STM pin -> 300R -> LED anode -> LED cathode -> GND. Active-high. */
+#define STATUS_LED_ON  GPIO_PIN_SET
+#define STATUS_LED_OFF GPIO_PIN_RESET
+
 static uint8_t esp_enabled;
 static EspBootMode esp_boot_mode = ESP_BOOTMODE_APP;
 static EspMuxRoute esp_mux_route = ESP_MUX_ROUTE_STM;
@@ -76,6 +81,9 @@ void EspControl_SetEnabled(uint8_t enabled)
     HAL_GPIO_WritePin(ESP_EN_GPIO_Port,
                       ESP_EN_Pin,
                       esp_enabled ? ESP_EN_ENABLED_LEVEL : ESP_EN_DISABLED_LEVEL);
+    HAL_GPIO_WritePin(ESP_MODE0_GPIO_Port,
+                      ESP_MODE0_Pin,
+                      esp_enabled ? STATUS_LED_ON : STATUS_LED_OFF);
 }
 
 void EspControl_SetBootMode(EspBootMode mode)
@@ -90,6 +98,9 @@ void EspControl_SetBootMode(EspBootMode mode)
     HAL_GPIO_WritePin(ESP_BOOT_GPIO_Port,
                       ESP_BOOT_Pin,
                       (mode == ESP_BOOTMODE_FLASH) ? ESP_BOOT_FLASH_LEVEL : ESP_BOOT_APP_LEVEL);
+    HAL_GPIO_WritePin(ESP_MODE1_GPIO_Port,
+                      ESP_MODE1_Pin,
+                      (mode == ESP_BOOTMODE_FLASH) ? STATUS_LED_ON : STATUS_LED_OFF);
 }
 
 void EspControl_SetMuxRoute(EspMuxRoute route)
@@ -104,15 +115,14 @@ void EspControl_SetMuxRoute(EspMuxRoute route)
     HAL_GPIO_WritePin(BUS_SELECT_GPIO_Port,
                       BUS_SELECT_Pin,
                       (route == ESP_MUX_ROUTE_ESP) ? ESP_MUX_ESP_LEVEL : ESP_MUX_STM_LEVEL);
+    HAL_GPIO_WritePin(MUS_STATUS_GPIO_Port,
+                      MUS_STATUS_Pin,
+                      (route == ESP_MUX_ROUTE_ESP) ? STATUS_LED_ON : STATUS_LED_OFF);
 }
 
 void EspControl_Init(void)
 {
     GPIO_PinState bootDebug = HAL_GPIO_ReadPin(BOOT_DEBUG_GPIO_Port, BOOT_DEBUG_Pin);
-
-    HAL_GPIO_WritePin(ESP_MODE0_GPIO_Port, ESP_MODE0_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(ESP_MODE1_GPIO_Port, ESP_MODE1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(MUS_STATUS_GPIO_Port, MUS_STATUS_Pin, GPIO_PIN_RESET);
 
     last_boot_debug = bootDebug;
     stable_boot_debug = bootDebug;
