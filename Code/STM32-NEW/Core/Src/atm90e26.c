@@ -100,8 +100,8 @@ static int16_t decode_sign_magnitude(uint16_t raw)
 ATM90E26_CalConfig ATM90E26_DefaultCal(void)
 {
     ATM90E26_CalConfig c = {
-        .plconstH = 0x00B9,
-        .plconstL = 0xC1F3,
+        .plconstH = 0x005C,
+        .plconstL = 0xE0FC,
         .lgain    = 0x1D39,
         .lphi     = 0x0000,
         .ngain    = 0x0000,
@@ -112,7 +112,7 @@ ATM90E26_CalConfig ATM90E26_DefaultCal(void)
         .qNolTh   = 0x0000,
         .mmode    = 0x5422,
         .ugain    = 0x5684,
-        .igainL   = 0x8537,
+        .igainL   = 0x7DDA,
         .igainN   = 0x7530,
         .uoffset  = 0x0000,
         .ioffsetL = 0x0000,

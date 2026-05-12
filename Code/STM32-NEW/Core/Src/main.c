@@ -304,7 +304,7 @@ int main(void)
         {
           BoardPowerSource power = BoardControl_GetPowerSource();
 
-          Display_Update(&meas, atm_dev.totalImportEnergy);
+          Display_Update(&meas, atm_dev.totalExportEnergy);
           DebugConsole_LogMeasurement(&meas,
                                       atm_dev.totalImportEnergy,
                                       atm_dev.totalExportEnergy,

@@ -25,7 +25,7 @@ void Display_Splash(void)
     SSD1306_Update();
 }
 
-void Display_Update(const ATM90E26_Meas *m, uint32_t totalImport)
+void Display_Update(const ATM90E26_Meas *m, uint32_t totalEnergy)
 {
     int16_t pf;
     uint16_t apf;
@@ -65,12 +65,8 @@ void Display_Update(const ATM90E26_Meas *m, uint32_t totalImport)
 
     SSD1306_SetCursor(0U, 6U);
     snprintf(buf, sizeof(buf), "E:%lu.%04lu kWh",
-             (unsigned long)(totalImport / 10000UL),
-             (unsigned long)(totalImport % 10000UL));
-    SSD1306_WriteString(buf);
-
-    SSD1306_SetCursor(0U, 7U);
-    snprintf(buf, sizeof(buf), "In:%u.%03u A", m->currentN / 1000U, m->currentN % 1000U);
+             (unsigned long)(totalEnergy / 10000UL),
+             (unsigned long)(totalEnergy % 10000UL));
     SSD1306_WriteString(buf);
 
     SSD1306_Update();

@@ -22,7 +22,7 @@ void UART_SendMeasurements(const ATM90E26_Meas *m,
     pb_ostream_t stream = pb_ostream_from_buffer(payload, sizeof(payload));
     uint32_t len;
 
-    (void)totalExport;
+    (void)totalImport;
     (void)uptimeSec;
 
     if ((uart_handle == NULL) || (m == NULL))
@@ -32,7 +32,7 @@ void UART_SendMeasurements(const ATM90E26_Meas *m,
     msg.voltage = (float)m->voltage / 100.0f;
     msg.power = (float)m->activePower;
     msg.frequency = (float)m->frequency / 100.0f;
-    msg.power_usage = (float)totalImport * 0.0001f;
+    msg.power_usage = (float)totalExport * 0.0001f;
     msg.sd_logs_enable = true;
     msg.wifi_enable = true;
 
