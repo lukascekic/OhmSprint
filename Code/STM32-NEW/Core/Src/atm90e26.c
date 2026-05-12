@@ -110,9 +110,9 @@ ATM90E26_CalConfig ATM90E26_DefaultCal(void)
         .pNolTh   = 0x0000,
         .qStartTh = 0x0AEC,
         .qNolTh   = 0x0000,
-        .mmode    = 0x9422,
-        .ugain    = 0x6720,
-        .igainL   = 0x7A13,
+        .mmode    = 0x5422,
+        .ugain    = 0x5684,
+        .igainL   = 0x8537,
         .igainN   = 0x7530,
         .uoffset  = 0x0000,
         .ioffsetL = 0x0000,
@@ -253,6 +253,8 @@ ATM90E26_Status ATM90E26_ReadAll(ATM90E26_Dev *dev, ATM90E26_Meas *m)
 {
     ATM90E26_Status st;
     uint16_t raw = 0U;
+    uint16_t apEnergy = 0U;
+    uint16_t anEnergy = 0U;
 
     if (dev->initialized == 0U)
         return ATM_ERR_NOT_INIT;
@@ -284,10 +286,13 @@ ATM90E26_Status ATM90E26_ReadAll(ATM90E26_Dev *dev, ATM90E26_Meas *m)
     if ((m->voltage == 0U) && (m->frequency == 0U))
         return ATM_ERR_COMM_VERIFY;
 
-    st = read_reg_checked(dev, ATM_REG_AP_ENERGY, &m->importEnergy);
+    st = read_reg_checked(dev, ATM_REG_AP_ENERGY, &apEnergy);
     if (st != ATM_OK) return st;
-    st = read_reg_checked(dev, ATM_REG_AN_ENERGY, &m->exportEnergy);
+    st = read_reg_checked(dev, ATM_REG_AN_ENERGY, &anEnergy);
     if (st != ATM_OK) return st;
+
+    m->importEnergy = anEnergy;
+    m->exportEnergy = apEnergy;
 
     dev->totalImportEnergy += m->importEnergy;
     dev->totalExportEnergy += m->exportEnergy;
