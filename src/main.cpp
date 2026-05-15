@@ -29,9 +29,7 @@ static uint8_t uart_buffer_idx = 0;
 static uint16_t expected_length = 0;
 static bool reading_length = true;
 
-static uint32_t getTimestamp() {
-  return millis() / 1000;
-}
+static uint32_t getTimestamp() { return millis() / 1000; }
 
 void handle_measure_data(const MeasureData &data) {
   latest_data = data;
@@ -142,6 +140,7 @@ esp_err_t serveStaticFile(const char *path, PsychicResponse *response) {
   file.close();
 
   PsychicFileResponse fileResponse(response, LittleFS, filePath);
+  fileResponse.setCode(200);
   return fileResponse.send();
 }
 
@@ -312,6 +311,7 @@ void setup() {
   Serial.println("\n\n=== ESP32-C3 Sensor Server ===");
 
   Serial1.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+
   Serial.printf("UART1 initialized on GPIO%d(RX)/GPIO%d(TX) at %d baud\n",
                 UART_RX_PIN, UART_TX_PIN, UART_BAUD);
 
