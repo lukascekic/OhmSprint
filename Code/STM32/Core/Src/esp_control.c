@@ -13,8 +13,6 @@
 #define USB_RTS_ACTIVE_LEVEL GPIO_PIN_RESET
 #define BOOT_DEBUG_DEBOUNCE_MS 30U
 
-/* Status indicator LEDs on PB3 (MUX_STATUS), PB4 (ESP_MODE0), PB5 (ESP_MODE1).
- * Hardware: STM pin -> 300R -> LED anode -> LED cathode -> GND. Active-high. */
 #define STATUS_LED_ON  GPIO_PIN_SET
 #define STATUS_LED_OFF GPIO_PIN_RESET
 
@@ -94,7 +92,6 @@ void EspControl_SetBootMode(EspBootMode mode)
     esp_boot_mode = mode;
     esp_boot_mode_written = 1U;
 
-    /* ESP boot strap defaults to app mode when BOOT stays high. */
     HAL_GPIO_WritePin(ESP_BOOT_GPIO_Port,
                       ESP_BOOT_Pin,
                       (mode == ESP_BOOTMODE_FLASH) ? ESP_BOOT_FLASH_LEVEL : ESP_BOOT_APP_LEVEL);
@@ -107,11 +104,9 @@ void EspControl_SetMuxRoute(EspMuxRoute route)
 {
     esp_mux_route = route;
 
-    /*
-     * Current bring-up assumption:
-     * BUS_SELECT low routes USB-UART toward STM32.
-     * If hardware validation proves the opposite, only these levels should change.
-     */
+
+    // BUS_SELECT low routes USB-UART toward STM32
+
     HAL_GPIO_WritePin(BUS_SELECT_GPIO_Port,
                       BUS_SELECT_Pin,
                       (route == ESP_MUX_ROUTE_ESP) ? ESP_MUX_ESP_LEVEL : ESP_MUX_STM_LEVEL);
