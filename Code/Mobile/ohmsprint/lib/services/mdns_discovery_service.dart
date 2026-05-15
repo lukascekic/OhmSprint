@@ -42,8 +42,6 @@ class MdnsDiscoveryService {
       host,
       port,
       reuseAddress: reuseAddress,
-      // Android's Dart socket backend can reject SO_REUSEPORT; SO_REUSEADDR is
-      // enough for the one-shot discovery flow used by this app.
       reusePort: false,
       ttl: ttl,
     );

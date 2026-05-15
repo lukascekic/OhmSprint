@@ -65,9 +65,6 @@ class NotificationService {
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        // Android versions before the runtime notification permission don't
-        // need an explicit grant, so a missing platform implementation should
-        // not block enabling foreground alerts.
         return await _plugin
                 .resolvePlatformSpecificImplementation<
                     AndroidFlutterLocalNotificationsPlugin>()

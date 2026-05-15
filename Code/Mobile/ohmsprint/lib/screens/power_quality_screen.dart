@@ -18,8 +18,7 @@ import '../widgets/common/metric_label.dart';
 import '../widgets/gauges/quality_slider.dart';
 import '../widgets/gauges/semi_circular_gauge.dart';
 
-// These nominals intentionally mirror the v1 plan/UI reference values used
-// for centered "no data yet" placeholders on the quality indicators.
+
 const double _nominalVoltage = 230;
 const double _nominalFrequency = 50;
 const double _nominalPowerFactor = 1;
@@ -424,7 +423,6 @@ class _EventCard extends StatelessWidget {
       return '--:--:--';
     }
 
-    // The v1 protocol stores event timestamps as Unix milliseconds.
     return DateFormat('HH:mm:ss').format(
       DateTime.fromMillisecondsSinceEpoch(timestamp),
     );
