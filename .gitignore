@@ -2,7 +2,14 @@
 docs/
 
 # STM32CubeIDE build output
-Code/STM32-NEW/Debug/
+Code/STM32/Debug/
+Code/STM32/*.launch
+
+# ESP32 build artifacts
+Code/ESP32/.pio/
+Code/ESP32/data/
+Code/ESP32/web/node_modules/
+Code/ESP32/web/dist/
 
 # Mobile app local logs
 Code/Mobile/ohmsprint/*.log
