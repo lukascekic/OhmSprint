@@ -1,0 +1,16 @@
+---
+
+interface Props {
+    title: string;
+    canvasId: string;
+}
+
+const { title, canvasId } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow p-4">
+    <div class="text-sm font-medium text-gray-700 mb-3">{title}</div>
+    <div class="h-40">
+        <canvas id={canvasId}></canvas>
+    </div>
+</div>
