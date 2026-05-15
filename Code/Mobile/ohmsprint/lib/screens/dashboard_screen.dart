@@ -30,7 +30,8 @@ class DashboardScreen extends ConsumerWidget {
     final connectionState = ref.watch(connectionProvider);
     final settings = ref.watch(settingsProvider);
     final now = DateTime.now();
-    final deviceName = _deviceName(connectionState.ipAddress);
+    final isDemoStream = connectionState.transport == ConnectionTransport.mock;
+    final deviceName = _deviceName(connectionState);
     final powerValues =
         history.map((measurement) => measurement.activePower).toList();
     final sparklineValues = powerValues.length > 60
@@ -54,8 +55,10 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               _SectionHeader(
-                title: 'LIVE TELEMETRY',
-                trailing: DateFormat('HH:mm:ss').format(now),
+                title: isDemoStream ? 'DEMO TELEMETRY' : 'LIVE TELEMETRY',
+                trailing: isDemoStream
+                    ? 'SIMULATED STREAM'
+                    : DateFormat('HH:mm:ss').format(now),
               ),
               const SizedBox(height: 10),
               Center(
@@ -129,9 +132,10 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionHeader(
+                    _SectionHeader(
                       title: 'LOAD PROFILE (60S)',
-                      trailing: 'REAL-TIME FEED',
+                      trailing:
+                          isDemoStream ? 'SIMULATED FEED' : 'REAL-TIME FEED',
                     ),
                     const SizedBox(height: 14),
                     SizedBox(
@@ -139,7 +143,9 @@ class DashboardScreen extends ConsumerWidget {
                       child: sparklineValues.isEmpty
                           ? Center(
                               child: Text(
-                                'Awaiting live telemetry...',
+                                isDemoStream
+                                    ? 'Awaiting demo telemetry...'
+                                    : 'Awaiting live telemetry...',
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.onSurfaceVariant,
                                 ),
@@ -161,9 +167,14 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  String _deviceName(String? ipAddress) {
+  String _deviceName(DeviceConnectionState connectionState) {
+    if (connectionState.transport == ConnectionTransport.mock) {
+      return 'Demo Stream';
+    }
+
+    final ipAddress = connectionState.ipAddress;
     if (ipAddress == null || ipAddress.isEmpty) {
-      return 'EnergyMeter-DEMO';
+      return 'EnergyMeter';
     }
 
     final digits = ipAddress.replaceAll(RegExp(r'[^0-9]'), '');

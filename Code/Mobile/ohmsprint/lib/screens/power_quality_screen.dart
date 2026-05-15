@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../core/constants/app_constants.dart';
+import '../core/models/connection_state.dart';
 import '../core/models/metric_type.dart';
 import '../core/models/power_event.dart';
 import '../core/theme/app_colors.dart';
@@ -11,13 +11,14 @@ import '../core/utils/formatters.dart';
 import '../core/utils/quality_evaluator.dart';
 import '../providers/measurement_provider.dart';
 import '../providers/power_events_provider.dart';
+import '../providers/connection_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/common/glass_card.dart';
 import '../widgets/common/metric_label.dart';
 import '../widgets/gauges/quality_slider.dart';
 import '../widgets/gauges/semi_circular_gauge.dart';
 
-// These nominals intentionally mirror the v1 plan/UI reference values used
-// for centered "no data yet" placeholders on the quality indicators.
+
 const double _nominalVoltage = 230;
 const double _nominalFrequency = 50;
 const double _nominalPowerFactor = 1;
@@ -30,7 +31,10 @@ class PowerQualityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final latestMeasurement = ref.watch(latestMeasurementProvider);
     final events = ref.watch(powerEventsProvider);
+    final connectionState = ref.watch(connectionProvider);
+    final settings = ref.watch(settingsProvider);
     final hasMeasurement = latestMeasurement != null;
+    final isDemoStream = connectionState.transport == ConnectionTransport.mock;
     final visibleEvents = events.length > _visibleEventLimit
         ? events.sublist(0, _visibleEventLimit)
         : events;
@@ -39,7 +43,11 @@ class PowerQualityScreen extends ConsumerWidget {
     final voltage = latestMeasurement?.voltage ?? _nominalVoltage;
     final frequency = latestMeasurement?.frequency ?? _nominalFrequency;
     final powerFactorLevel = hasMeasurement
-        ? evaluateQuality(MetricType.powerFactor, powerFactor)
+        ? evaluateQuality(
+            MetricType.powerFactor,
+            powerFactor,
+            settings: settings,
+          )
         : null;
 
     return Scaffold(
@@ -68,8 +76,10 @@ class PowerQualityScreen extends ConsumerWidget {
                               const SizedBox(height: 8),
                               Text(
                                 latestMeasurement == null
-                                    ? 'Awaiting live telemetry'
-                                    : 'Live phase alignment and load quality',
+                                    ? 'Awaiting telemetry'
+                                    : isDemoStream
+                                        ? 'Demo phase alignment and load quality'
+                                        : 'Live phase alignment and load quality',
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.onSurfaceVariant,
                                 ),
@@ -108,9 +118,9 @@ class PowerQualityScreen extends ConsumerWidget {
                       : '${formatMetric(MetricType.voltage, voltage)}V',
                   slider: QualitySlider(
                     value: voltage,
-                    min: AppConstants.voltageCriticalMin,
+                    min: voltageCriticalMin(settings),
                     nominal: _nominalVoltage,
-                    max: AppConstants.voltageCriticalMax,
+                    max: voltageCriticalMax(settings),
                     normalColor: AppColors.secondary,
                   ),
                 ),
@@ -125,9 +135,9 @@ class PowerQualityScreen extends ConsumerWidget {
                       : '${formatMetric(MetricType.frequency, frequency)}Hz',
                   slider: QualitySlider(
                     value: frequency,
-                    min: AppConstants.frequencyCriticalMin,
+                    min: frequencyCriticalMin(settings),
                     nominal: _nominalFrequency,
-                    max: AppConstants.frequencyCriticalMax,
+                    max: frequencyCriticalMax(settings),
                     normalColor: AppColors.primary,
                   ),
                 ),
@@ -413,7 +423,6 @@ class _EventCard extends StatelessWidget {
       return '--:--:--';
     }
 
-    // The v1 protocol stores event timestamps as Unix milliseconds.
     return DateFormat('HH:mm:ss').format(
       DateTime.fromMillisecondsSinceEpoch(timestamp),
     );

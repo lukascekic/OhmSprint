@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:multicast_dns/multicast_dns.dart';
 
@@ -19,12 +20,32 @@ class DiscoveredDevice {
 class MdnsDiscoveryService {
   MdnsDiscoveryService({
     MDnsClientFactory? clientFactory,
-  }) : _clientFactory = clientFactory ?? MDnsClient.new;
+  }) : _clientFactory = clientFactory ?? _createClient;
 
   static const String primaryServiceType = '_ohmsprint._tcp.local';
   static const String fallbackServiceType = '_http._tcp.local';
 
   final MDnsClientFactory _clientFactory;
+
+  static MDnsClient _createClient() {
+    return MDnsClient(rawDatagramSocketFactory: _bindDatagramSocket);
+  }
+
+  static Future<RawDatagramSocket> _bindDatagramSocket(
+    dynamic host,
+    int port, {
+    bool reuseAddress = true,
+    bool reusePort = true,
+    int ttl = 255,
+  }) {
+    return RawDatagramSocket.bind(
+      host,
+      port,
+      reuseAddress: reuseAddress,
+      reusePort: false,
+      ttl: ttl,
+    );
+  }
 
   Future<List<DiscoveredDevice>> scan({
     Duration timeout = const Duration(seconds: 5),

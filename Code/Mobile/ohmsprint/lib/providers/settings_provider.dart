@@ -34,6 +34,8 @@ class SettingsNotifier extends StateNotifier<SettingsModel> {
       _update(state.copyWith(darkMode: value));
   Future<void> setUpdateInterval(int value) =>
       _update(state.copyWith(updateInterval: value));
+  Future<void> setDemoMode(bool value) =>
+      _update(state.copyWith(demoMode: value));
 
   Future<void> _update(SettingsModel nextState) async {
     state = nextState;

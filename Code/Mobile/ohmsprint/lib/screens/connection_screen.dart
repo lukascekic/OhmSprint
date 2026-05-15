@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../core/models/connection_state.dart';
 import '../core/theme/app_colors.dart';
@@ -27,10 +26,9 @@ class ConnectionScreen extends ConsumerStatefulWidget {
 class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
     with SingleTickerProviderStateMixin {
   static const _defaultIp = '192.168.4.1';
+  static const _mockServerExample = '192.168.100.21:8080';
 
   late final AnimationController _pulseController;
-  Timer? _demoScanTimer;
-  bool _didScheduleDemoConnect = false;
   bool _didStartRealScan = false;
   bool _didAutoConnectDiscoveredDevice = false;
   bool _isScanning = false;
@@ -56,17 +54,11 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
 
   @override
   void dispose() {
-    _demoScanTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
 
   void _startInitialDiscovery() {
-    if (ref.read(demoModeProvider)) {
-      _scheduleDemoConnectIfNeeded();
-      return;
-    }
-
     if (_didStartRealScan) {
       return;
     }
@@ -75,36 +67,19 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
     unawaited(_runMdnsScan(autoConnectIfPossible: true));
   }
 
-  void _scheduleDemoConnectIfNeeded() {
-    if (_didScheduleDemoConnect || !ref.read(demoModeProvider)) {
-      return;
-    }
-
-    _didScheduleDemoConnect = true;
-    _demoScanTimer?.cancel();
-    _demoScanTimer = Timer(const Duration(seconds: 2), () {
-      if (!mounted) {
-        return;
-      }
-      ref.read(connectionProvider.notifier).connect(_defaultIp);
-    });
-  }
-
-  void _resetDemoAutoConnect() {
-    _demoScanTimer?.cancel();
-    _didScheduleDemoConnect = false;
-  }
-
   bool _isValidIpOrSocketAddress(String input) {
     final value = input.trim();
     final ipv4Pattern = RegExp(
       r'^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.'
       r'(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.'
       r'(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.'
-      r'(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$',
+      r'(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)'
+      r'(?::([1-9]\d{0,4}))?$',
     );
+    final match = ipv4Pattern.firstMatch(value);
+    final port = match == null ? null : int.tryParse(match.group(5) ?? '');
 
-    return ipv4Pattern.hasMatch(value) ||
+    return (match != null && (port == null || port <= 65535)) ||
         value.startsWith('ws://') ||
         value.startsWith('wss://');
   }
@@ -138,11 +113,13 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
               color: AppColors.onSurface,
             ),
             decoration: InputDecoration(
-              labelText: 'Device IP',
+              labelText: 'Device IP / host:port',
               labelStyle: AppTypography.bodyMedium.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
-              hintText: _defaultIp,
+              hintText: _mockServerExample,
+              helperText:
+                  'For mock server include the port, e.g. $_mockServerExample.',
             ),
           ),
           actions: [
@@ -151,8 +128,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () {
+                FocusManager.instance.primaryFocus?.unfocus();
+                Navigator.of(context).pop(controller.text.trim());
+              },
               child: const Text('Connect'),
             ),
           ],
@@ -160,6 +139,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
       },
     );
 
+    await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     controller.dispose();
 
     if (ip == null || ip.isEmpty || !mounted) {
@@ -178,11 +159,20 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
       return;
     }
 
+    await ref.read(settingsProvider.notifier).setDemoMode(false);
+    await ref.read(settingsProvider.notifier).setDeviceIp(ip);
+
     final discoveredPort =
         _discoveredDevice != null && ip == _discoveredDevice!.ip
             ? _discoveredDevice!.port
             : null;
-    ref.read(connectionProvider.notifier).connect(ip, port: discoveredPort);
+    if (!mounted) {
+      return;
+    }
+
+    unawaited(
+      ref.read(connectionProvider.notifier).connect(ip, port: discoveredPort),
+    );
   }
 
   Future<void> _runMdnsScan({bool autoConnectIfPossible = false}) async {
@@ -266,6 +256,15 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
     await _runMdnsScan();
   }
 
+  Future<void> _startDemoMode() async {
+    await ref.read(connectionProvider.notifier).disconnect();
+    await ref.read(settingsProvider.notifier).setDemoMode(true);
+    if (!mounted) {
+      return;
+    }
+    ref.read(connectionProvider.notifier).connect(_defaultIp);
+  }
+
   String _transportLabel(ConnectionTransport? transport,
       {bool isDemoMode = false}) {
     if (isDemoMode) {
@@ -333,20 +332,6 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
     final connectionMessage = connectionState.lastError ??
         _scanStatusMessage ??
         'Searching for broadcast packets...';
-
-    ref.listen<DeviceConnectionState>(connectionProvider, (previous, next) {
-      if (next.isConnected && context.mounted) {
-        context.go('/dashboard');
-      }
-    });
-
-    if (isDemoMode) {
-      _scheduleDemoConnectIfNeeded();
-    } else {
-      if (_didScheduleDemoConnect) {
-        _resetDemoAutoConnect();
-      }
-    }
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
@@ -590,6 +575,19 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: isBusy ? null : _startDemoMode,
+                      icon: const Icon(Icons.play_circle_outline_rounded),
+                      label: const Text('Start Demo Mode'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.secondary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
                   ),

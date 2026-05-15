@@ -12,6 +12,7 @@ class SettingsModel {
     this.notificationsEnabled = false,
     this.darkMode = true,
     this.updateInterval = 1000,
+    this.demoMode = false,
   })  : assert(tariffPrice >= 0),
         assert(voltageThreshold >= 0),
         assert(freqThreshold >= 0),
@@ -28,6 +29,7 @@ class SettingsModel {
   final bool notificationsEnabled;
   final bool darkMode;
   final int updateInterval;
+  final bool demoMode;
 
   SettingsModel copyWith({
     String? deviceIp,
@@ -40,6 +42,7 @@ class SettingsModel {
     bool? notificationsEnabled,
     bool? darkMode,
     int? updateInterval,
+    bool? demoMode,
   }) {
     return SettingsModel(
       deviceIp: deviceIp ?? this.deviceIp,
@@ -52,6 +55,7 @@ class SettingsModel {
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       darkMode: darkMode ?? this.darkMode,
       updateInterval: updateInterval ?? this.updateInterval,
+      demoMode: demoMode ?? this.demoMode,
     );
   }
 
@@ -67,6 +71,7 @@ class SettingsModel {
       'notificationsEnabled': notificationsEnabled,
       'darkMode': darkMode,
       'updateInterval': updateInterval,
+      'demoMode': demoMode,
     };
   }
 
@@ -85,6 +90,7 @@ class SettingsModel {
       notificationsEnabled: json['notificationsEnabled'] as bool? ?? false,
       darkMode: json['darkMode'] as bool? ?? true,
       updateInterval: (json['updateInterval'] as num?)?.toInt() ?? 1000,
+      demoMode: json['demoMode'] as bool? ?? false,
     );
   }
 }

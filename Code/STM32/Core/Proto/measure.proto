@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message MeasureData {
+    float current = 1;
+    float voltage = 2;
+    float power = 3;
+    float frequency = 4;
+    float power_usage = 5;
+    bool sd_logs_enable = 6;
+    bool wifi_enable = 7;
+}

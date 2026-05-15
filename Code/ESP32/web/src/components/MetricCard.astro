@@ -1,0 +1,19 @@
+---
+
+interface Props {
+    label: string;
+    valueId: string;
+    unit: string;
+    color: string;
+}
+
+const { label, valueId, unit, color } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow p-6">
+    <div class="text-sm font-medium text-gray-500 mb-1">{label}</div>
+    <div class={`text-3xl font-semibold ${color}`}>
+        <span id={valueId}>--</span>
+        <span class="text-lg text-gray-400">{unit}</span>
+    </div>
+</div>

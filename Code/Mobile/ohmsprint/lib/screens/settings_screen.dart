@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +25,9 @@ const Map<int, String> _updateIntervalOptions = {
   2000: '2s',
   5000: '5s',
 };
+
+const String _defaultDemoIp = '192.168.4.1';
+const String _mockServerExample = '192.168.100.21:8080';
 
 TextInputFormatter _decimalInputFormatter(int maxDecimals) {
   final pattern = RegExp('^\\d*\\.?\\d{0,$maxDecimals}\$');
@@ -85,6 +90,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isDemoMode = ref.watch(demoModeProvider);
     final voltageThreshold =
         _pendingVoltageThreshold ?? settings.voltageThreshold.clamp(1, 20);
+    _syncTextField(
+      controller: _deviceIpController,
+      focusNode: _deviceIpFocusNode,
+      value: settings.deviceIp,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDim,
@@ -119,13 +129,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _SettingLabel('IP Address'),
+                    const _SettingLabel('IP Address / Port'),
                     const SizedBox(height: 8),
                     _SettingsTextField(
                       controller: _deviceIpController,
                       focusNode: _deviceIpFocusNode,
                       keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.done,
+                      hintText: _mockServerExample,
+                      helperText:
+                          'Use host:port for mock server, e.g. $_mockServerExample.',
                       onSubmitted: (_) => _saveDeviceIp(),
                       onTapOutside: (_) => _saveDeviceIp(),
                     ),
@@ -386,11 +399,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: _SwitchRow(
                     title: 'Demo Mode',
                     subtitle:
-                        'Use mock telemetry stream instead of device data',
+                        'Disconnect device data and use simulated telemetry',
                     value: isDemoMode,
-                    onChanged: (value) {
-                      ref.read(demoModeProvider.notifier).state = value;
-                    },
+                    onChanged: (value) => unawaited(_setDemoMode(value)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -471,11 +482,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
     if (!_isValidDeviceEndpoint(nextValue)) {
-      _showSnackBar('Enter a valid IPv4 address or ws:// endpoint.');
+      _showSnackBar('Enter a valid IPv4, host:port, or ws:// endpoint.');
       return;
     }
 
     await ref.read(settingsProvider.notifier).setDeviceIp(nextValue);
+  }
+
+  Future<void> _setDemoMode(bool value) async {
+    final connectionNotifier = ref.read(connectionProvider.notifier);
+    final settingsNotifier = ref.read(settingsProvider.notifier);
+
+    if (value) {
+      await connectionNotifier.disconnect();
+      await settingsNotifier.setDemoMode(true);
+      await connectionNotifier.connect(_defaultDemoIp);
+      return;
+    }
+
+    await settingsNotifier.setDemoMode(false);
+    if (ref.read(connectionProvider).transport == ConnectionTransport.mock) {
+      await connectionNotifier.disconnect();
+    }
   }
 
   Future<void> _saveTariffPrice() async {
@@ -624,9 +652,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return false;
     }
 
-    final ipPattern = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$');
-    if (ipPattern.hasMatch(value)) {
-      return value.split('.').every((segment) {
+    final ipPattern = RegExp(
+      r'^((?:\d{1,3}\.){3}\d{1,3})(?::([1-9]\d{0,4}))?$',
+    );
+    final match = ipPattern.firstMatch(value);
+    if (match != null) {
+      final port = int.tryParse(match.group(2) ?? '');
+      return (port == null || port <= 65535) &&
+          match.group(1)!.split('.').every((segment) {
         final parsed = int.tryParse(segment);
         return parsed != null && parsed >= 0 && parsed <= 255;
       });
@@ -653,6 +686,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _syncTextField({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String value,
+  }) {
+    if (focusNode.hasFocus || controller.text == value) {
+      return;
+    }
+
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
     );
   }
 }
@@ -721,6 +769,8 @@ class _SettingsTextField extends StatelessWidget {
     required this.onSubmitted,
     this.keyboardType,
     this.textInputAction,
+    this.hintText,
+    this.helperText,
     this.onTapOutside,
     this.inputFormatters,
   });
@@ -729,6 +779,8 @@ class _SettingsTextField extends StatelessWidget {
   final FocusNode focusNode;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
+  final String? hintText;
+  final String? helperText;
   final void Function(String) onSubmitted;
   final TapRegionCallback? onTapOutside;
   final List<TextInputFormatter>? inputFormatters;
@@ -746,6 +798,8 @@ class _SettingsTextField extends StatelessWidget {
         fontSize: 14,
       ),
       decoration: InputDecoration(
+        hintText: hintText,
+        helperText: helperText,
         filled: true,
         fillColor: AppColors.surfaceContainerHigh.withValues(alpha: 0.55),
         contentPadding:

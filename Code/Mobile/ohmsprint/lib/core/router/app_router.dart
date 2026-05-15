@@ -44,35 +44,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'connect',
         builder: (context, state) => const ConnectionScreen(),
       ),
-      ShellRoute(
-        builder: (context, state, child) {
-          return ShellScreen(
-            location: state.uri.toString(),
-            child: child,
-          );
-        },
-        routes: [
-          GoRoute(
-            path: '/dashboard',
-            name: 'dashboard',
-            builder: (context, state) => const DashboardScreen(),
-          ),
-          GoRoute(
-            path: '/charts',
-            name: 'charts',
-            builder: (context, state) => const ChartsScreen(),
-          ),
-          GoRoute(
-            path: '/quality',
-            name: 'quality',
-            builder: (context, state) => const PowerQualityScreen(),
-          ),
-          GoRoute(
-            path: '/settings',
-            name: 'settings',
-            builder: (context, state) => const SettingsScreen(),
-          ),
-        ],
+      GoRoute(
+        path: '/dashboard',
+        name: 'dashboard',
+        builder: (context, state) => ShellScreen(
+          location: state.uri.toString(),
+          child: const DashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/charts',
+        name: 'charts',
+        builder: (context, state) => ShellScreen(
+          location: state.uri.toString(),
+          child: const ChartsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/quality',
+        name: 'quality',
+        builder: (context, state) => ShellScreen(
+          location: state.uri.toString(),
+          child: const PowerQualityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => ShellScreen(
+          location: state.uri.toString(),
+          child: const SettingsScreen(),
+        ),
       ),
       GoRoute(
         path: '/settings/export',

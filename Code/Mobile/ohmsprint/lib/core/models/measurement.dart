@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'metric_type.dart';
 
 class Measurement {
@@ -28,29 +30,95 @@ class Measurement {
   final int timestamp;
 
   factory Measurement.fromJson(Map<String, dynamic> json) {
+    final voltage = _requireNumber(json, 'v', aliases: ['voltage']).toDouble();
+    final current = _requireNumber(json, 'i', aliases: ['current']).toDouble();
+    final activePower =
+        _requireNumber(json, 'p', aliases: ['power']).toDouble();
+    final apparentPower = _optionalNumber(json, 's')?.toDouble() ??
+        (voltage * current).abs();
+    final powerFactor = _optionalNumber(json, 'pf')?.toDouble() ??
+        _derivePowerFactor(activePower, apparentPower);
+    final importEnergy = _requireNumber(
+      json,
+      'ei',
+      aliases: ['e', 'power_usage'],
+    ).toDouble();
+
     return Measurement(
-      voltage: _requireNumber(json, 'v').toDouble(),
-      current: _requireNumber(json, 'i').toDouble(),
-      activePower: _requireNumber(json, 'p').toDouble(),
-      frequency: _requireNumber(json, 'f').toDouble(),
-      powerFactor: _requireNumber(json, 'pf').toDouble(),
-      timestamp: _requireNumber(json, 't').toInt(),
-      currentN: (json['in'] as num?)?.toDouble() ?? 0,
-      reactivePower: (json['q'] as num?)?.toDouble() ?? 0,
-      apparentPower: (json['s'] as num?)?.toDouble() ?? 0,
-      importEnergy: (json['ei'] as num?)?.toDouble() ??
-          (json['e'] as num?)?.toDouble() ??
-          0,
+      voltage: voltage,
+      current: current,
+      activePower: activePower,
+      frequency:
+          _requireNumber(json, 'f', aliases: ['frequency']).toDouble(),
+      powerFactor: powerFactor,
+      timestamp: _readTimestamp(json),
+      currentN: _optionalNumber(json, 'in')?.toDouble() ?? 0,
+      reactivePower: _optionalNumber(json, 'q')?.toDouble() ??
+          _deriveReactivePower(activePower, apparentPower),
+      apparentPower: apparentPower,
+      importEnergy: importEnergy,
       exportEnergy: (json['ee'] as num?)?.toDouble() ?? 0,
     );
   }
 
-  static num _requireNumber(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is num) {
+  static num _requireNumber(
+    Map<String, dynamic> json,
+    String key, {
+    List<String> aliases = const [],
+  }) {
+    final value = _optionalNumber(json, key, aliases: aliases);
+    if (value != null) {
       return value;
     }
     throw FormatException('Missing required numeric field: $key');
+  }
+
+  static num? _optionalNumber(
+    Map<String, dynamic> json,
+    String key, {
+    List<String> aliases = const [],
+  }) {
+    for (final candidate in [key, ...aliases]) {
+      final value = json[candidate];
+      if (value is num) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  static int _readTimestamp(Map<String, dynamic> json) {
+    final compactTimestamp = _optionalNumber(json, 't');
+    if (compactTimestamp != null) {
+      return compactTimestamp.toInt();
+    }
+
+    final verboseTimestamp = _optionalNumber(json, 'timestamp');
+    if (verboseTimestamp == null) {
+      throw const FormatException('Missing required numeric field: t');
+    }
+
+    final timestamp = verboseTimestamp.toInt();
+    if (timestamp < 1000000000000) {
+      return DateTime.now().millisecondsSinceEpoch;
+    }
+    return timestamp;
+  }
+
+  static double _derivePowerFactor(double activePower, double apparentPower) {
+    if (apparentPower == 0) {
+      return 1;
+    }
+    return (activePower / apparentPower).clamp(-1, 1).toDouble();
+  }
+
+  static double _deriveReactivePower(double activePower, double apparentPower) {
+    final reactiveMagnitude =
+        (apparentPower * apparentPower) - (activePower * activePower);
+    if (reactiveMagnitude <= 0) {
+      return 0;
+    }
+    return math.sqrt(reactiveMagnitude);
   }
 
   Map<String, dynamic> toJson() {

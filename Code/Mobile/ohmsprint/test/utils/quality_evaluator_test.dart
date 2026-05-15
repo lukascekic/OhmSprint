@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohmsprint/core/models/metric_type.dart';
+import 'package:ohmsprint/core/models/settings_model.dart';
 import 'package:ohmsprint/core/utils/quality_evaluator.dart';
 
 void main() {
@@ -29,5 +30,36 @@ void main() {
 
   test('current defaults to normal quality', () {
     expect(evaluateQuality(MetricType.current, 12.0), QualityLevel.normal);
+  });
+
+  test('uses custom voltage threshold from settings', () {
+    const settings = SettingsModel(voltageThreshold: 5);
+
+    expect(
+      evaluateQuality(MetricType.voltage, 243.0, settings: settings),
+      QualityLevel.critical,
+    );
+  });
+
+  test('uses custom frequency threshold from settings', () {
+    const settings = SettingsModel(freqThreshold: 1.0);
+
+    expect(
+      evaluateQuality(MetricType.frequency, 49.59, settings: settings),
+      QualityLevel.warning,
+    );
+    expect(
+      evaluateQuality(MetricType.frequency, 49.7, settings: settings),
+      QualityLevel.normal,
+    );
+  });
+
+  test('uses custom power factor threshold from settings', () {
+    const settings = SettingsModel(pfThreshold: 0.9);
+
+    expect(
+      evaluateQuality(MetricType.powerFactor, 0.88, settings: settings),
+      QualityLevel.critical,
+    );
   });
 }

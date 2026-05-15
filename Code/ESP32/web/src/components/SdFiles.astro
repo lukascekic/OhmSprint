@@ -1,0 +1,37 @@
+---
+---
+
+<div class="bg-white rounded-lg shadow p-4">
+    <div class="text-sm font-medium text-gray-700 mb-3">SD Card Files</div>
+    <ul id="sd-file-list" class="text-sm text-gray-600 space-y-1">
+        <li class="text-gray-400 italic">Loading...</li>
+    </ul>
+</div>
+
+<script>
+    async function loadSdFiles() {
+        const list = document.getElementById('sd-file-list')!;
+        try {
+            const resp = await fetch('/api/sd/files');
+            if (!resp.ok) {
+                const data = await resp.json().catch(() => null);
+                list.innerHTML = `<li class="text-red-600">${data?.error || 'Failed to load files'}</li>`;
+                return;
+            }
+            const data = await resp.json();
+            const files: string[] = data.files || [];
+            if (files.length === 0) {
+                list.innerHTML = '<li class="text-gray-400 italic">No files found</li>';
+            } else {
+                list.innerHTML = files.map(f => {
+                    const name = f.startsWith('/') ? f.substring(1) : f;
+                    return `<li><a href="/api/sd/download/${name}" download="${name}" class="font-mono text-blue-600 hover:underline">${f}</a></li>`;
+                }).join('');
+            }
+        } catch {
+            list.innerHTML = '<li class="text-red-600">Error fetching files</li>';
+        }
+    }
+
+    loadSdFiles();
+</script>

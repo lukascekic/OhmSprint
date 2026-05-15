@@ -13,6 +13,7 @@ void main() {
     await notifier.setTariffPrice(17.45);
     await notifier.setCurrency(Currency.eur);
     await notifier.setDeviceIp('192.168.4.2');
+    await notifier.setDemoMode(false);
 
     final restored = SettingsNotifier(repository);
 
@@ -20,5 +21,6 @@ void main() {
     expect(restored.state.tariffPrice, 17.45);
     expect(restored.state.currency, Currency.eur);
     expect(restored.state.deviceIp, '192.168.4.2');
+    expect(restored.state.demoMode, isFalse);
   });
 }
